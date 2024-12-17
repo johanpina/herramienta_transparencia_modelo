@@ -1,0 +1,42 @@
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .ficha-content, .ficha-content * {
+    visibility: visible;
+  }
+  .ficha-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  @page {
+    size: A4;
+    margin: 2cm;
+  }
+  .ficha-content {
+    font-size: 12pt;
+    line-height: 1.3;
+  }
+  h1 {
+    font-size: 18pt;
+  }
+  h2 {
+    font-size: 16pt;
+  }
+  h3 {
+    font-size: 14pt;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .preview-ficha-content img {
+    object-fit: contain !important;
+    height: auto !important;
+    position: relative !important;
+  }
+  .preview-ficha-content > div:first-child {
+    margin-bottom: 2cm;
+  }
+}
