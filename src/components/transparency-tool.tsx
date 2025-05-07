@@ -14,6 +14,7 @@ import { CustomDatePicker } from "@/components/ui/date-picker"
 import 'react-datepicker/dist/react-datepicker.css'
 import { PreviewFicha } from './preview-ficha'
 
+
 import {
   Tooltip,
   TooltipContent,
@@ -515,7 +516,6 @@ function TransparencyTool() {
   const [isAllRequiredAnswered, setIsAllRequiredAnswered] = useState(false)
   const [isLastSection, setIsLastSection] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
-  const printContentRef = useRef<HTMLDivElement>(null)
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [feedback, setFeedback] = useState('')
   const [organization, setOrganization] = useState('')
@@ -582,50 +582,6 @@ function TransparencyTool() {
     })
   }
 
-  const handleGeneratePDF = () => {
-    if (isAllRequiredAnswered) {
-      setShowPreview(true);
-      setTimeout(() => {
-        const html2pdf = require('html2pdf.js');
-        const element = document.querySelector('.ficha-content') as HTMLElement;
-        if (element) {
-          const opt = {
-            margin: 10,
-            filename: 'ficha_transparencia.pdf',
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { 
-              scale: 2,
-              useCORS: true,
-              //logging: true,
-            },
-            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-          };
-          html2pdf(element, opt).then(() => {
-            setShowPreview(false);
-            console.log('PDF generado con éxito');
-            toast({
-              title: "PDF Generado",
-              description: "El archivo PDF con tus respuestas ha sido generado y descargado.",
-            });
-          }).catch((error: any) => {
-            console.error('Error al generar el PDF:', error);
-            toast({
-              title: "Error",
-              description: "Hubo un problema al generar el PDF. Por favor, inténtalo de nuevo.",
-              variant: "destructive",
-            });
-          });
-        }
-      }, 1000); // Espera 1 segundo para asegurarse de que las imágenes se hayan cargado
-    } else {
-      toast({
-        title: "Error",
-        description: "Por favor, completa todas las preguntas obligatorias antes de generar el PDF.",
-        variant: "destructive",
-      })
-    }
-  }
-
   const handleNextSection = () => {
     const currentIndex = sections.findIndex(section => section.id === activeSection)
     if (currentIndex < sections.length - 1) {
@@ -643,7 +599,7 @@ function TransparencyTool() {
   }
 
 
-  const handleGeneratePreview = () => {
+  const handleOpenPreview = () => {
     if (isAllRequiredAnswered) {
       setShowPreview(true)
     } else {
@@ -744,7 +700,7 @@ function TransparencyTool() {
             alt="HERRAMIENTAS ALGORITMOS ÉTICOS"
             width={280} // Ajusta el tamaño de la imagen según sea necesario
             height={100}
-            objectFit='contain'
+            //objectFit='contain'
           
           />
         </div>
@@ -759,7 +715,7 @@ function TransparencyTool() {
             alt="Gob_Lab UAI"
             width={260} // Ajusta el tamaño de la imagen según sea necesario
             height={100}
-            objectFit='contain'
+            //objectFit='contain'
             
           />
         </div>
@@ -837,34 +793,34 @@ function TransparencyTool() {
               </Card>
 
               {/* Botones de acción */}
-              <div className="flex justify-between">
+              <div className="flex justify-between gap-4">
                 <Button onClick={handleSaveResponses}>Guardar Respuestas</Button>
+                <Button
+                    onClick={handleOpenPreview}
+                    variant="outline"
+                    disabled={!isAllRequiredAnswered}
+                  >
+                    Vista previa / Exportar PDF
+                  </Button>
                 <div className="space-x-4">
-                  <Button onClick={handleGeneratePreview} variant="outline" disabled={!isAllRequiredAnswered}>
-                    Vista Previa
-                  </Button>
-                  <Button onClick={handleGeneratePDF} variant="outline" disabled={!isAllRequiredAnswered}>
-                    Generar PDF
-                  </Button>
+                  
                   <Button onClick={handleNextSection} disabled={isLastSection}>
                     Siguiente Sección
                     <ChevronRight className="ml-2 h-4 w-5" />
                   </Button>
                 </div>
-              </div>
+              </div>  
             </div>
           </div>
         </div>
       </div>
-      {/* Contenedor oculto para imprimir */}
-      <div ref={printContentRef} className="hidden"></div>
-      <div className={showPreview ? 'visible' : 'hidden'}>
-        <PreviewFicha 
-          formData={formData} 
-          onClose={() => setShowPreview(false)} 
-          onGeneratePDF={handleGeneratePDF} 
+      
+      {showPreview && (
+        <PreviewFicha
+          formData={formData}
+          onClose={() => setShowPreview(false)}
         />
-      </div>
+      )}
     </div>
   )
 }

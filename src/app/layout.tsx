@@ -1,5 +1,6 @@
 import './globals.css'
-import '../styles/print-styles.css'
+//import '../styles/print-styles.css'
+import '@/styles/print-fixes.css';
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { Toaster } from "@/components/ui/toaster"

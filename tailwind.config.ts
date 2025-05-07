@@ -58,5 +58,9 @@ export default {
   		}
   	}
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"),function ({ addUtilities }) {
+	addUtilities({
+	  '.break-anywhere p, .break-anywhere li': { overflowWrap: 'anywhere', wordBreak: 'break-word' },
+	})
+  }, ],
 } satisfies Config;

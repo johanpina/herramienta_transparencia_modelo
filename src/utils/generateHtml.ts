@@ -83,7 +83,7 @@ export function generateHtml(formData: Record<string, any>): string {
 <body>
   <div class="container">
     <h1>${formData.nombreModelo1 || 'Ficha de Transparencia'}</h1>
-    <div class="column-container">
+    <div class="column-container break-anywhere">
       ${renderSection("Detalles del Modelo", `
         ${prepareSectionHtml("Modelo desarrollado por ", formData.desarrollador_modelo, "<p>", "</p>")}
         ${prepareSectionHtml("Versión del modelo", formData.version_modelo, "<p>", "</p>")}

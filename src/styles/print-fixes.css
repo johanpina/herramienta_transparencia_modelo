@@ -1,0 +1,37 @@
+/* Base: pantalla => 1 columna */
+.print-columns {
+  column-count: 1;
+}
+
+/* Justificación y pequeñas sangrías */
+.print-columns p,
+.print-columns li  {
+  text-align: justify;
+  text-justify: inter-word;
+  text-indent: 0;          /* sin tabulaciones raras */
+}
+
+/* Sangría visual tras cada título */
+.print-columns section > p,
+.print-columns section > ul {
+  margin-left: 4mm;        /* ajusta a tu gusto */
+}
+
+.logo-img {
+  max-width: 30%;          /* nunca más de un tercio del ancho */
+  height: auto;
+}
+/* Imprimir => 2 columnas (lo refuerza la regla inline del botón) */
+@media print {
+  .no-print { display: none !important; }
+  .print-columns {
+    column-count: 2 !important;
+    column-gap: 18mm !important;
+    column-fill: auto !important;
+
+  }
+  .logo-img {
+    max-width: 120px;      /* cifra de seguridad en mm ~45 */
+  }
+}
+

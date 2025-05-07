@@ -27,7 +27,7 @@ export default function LandingPage() {
       if (savedAnswers) {
         localStorage.setItem('currentAnswers', savedAnswers)
       }
-      router.push('/tool')
+      router.push('/herramienta-transparencia')
     }
   }
 

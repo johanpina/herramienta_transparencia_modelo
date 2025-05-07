@@ -11,10 +11,6 @@
     top: 0;
     width: 100%;
   }
-  @page {
-    size: A4;
-    margin: 2cm;
-  }
   .ficha-content {
     font-size: 12pt;
     line-height: 1.3;
@@ -39,4 +35,6 @@
   .preview-ficha-content > div:first-child {
     margin-bottom: 2cm;
   }
+
+  
 }
