@@ -125,10 +125,10 @@ export function InfoSidebar({
                 <SelectTrigger><SelectValue placeholder="Selecciona" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="general">Comentario general</SelectItem>
-                  <SelectItem value="bug">Reporte de error</SelectItem>
-                  <SelectItem value="feature">Sugerencia de mejora</SelectItem>
-                  <SelectItem value="question">Pregunta</SelectItem>
-                  <SelectItem value="other">Otro</SelectItem>
+                  <SelectItem value="error">Reporte de error</SelectItem>
+                  <SelectItem value="oportunidad_de_mejora">Sugerencia de mejora</SelectItem>
+                  <SelectItem value="pregunta">Pregunta</SelectItem>
+                  <SelectItem value="otra">Otro</SelectItem>
                 </SelectContent>
               </Select>
             </div>

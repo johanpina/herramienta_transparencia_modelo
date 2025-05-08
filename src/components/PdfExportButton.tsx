@@ -44,7 +44,7 @@ export function PdfExportButton({ targetId, fileName = 'ficha.pdf' }: Props) {
         /* --- Pie centrado, 2 líneas, numeración --- */
         @bottom-center {
           content:"Herramienta del GobLab UAI - Licencia MPL-2.0\\A"
-                  "Genera tu Ficha en: https://algoritmospublicos.cl/herramientas \\A"
+                  "Genera tu ficha en: https://algoritmospublicos.cl/herramientas \\A"
                   "© ${year} Ficha de transparencia del modelo elaborada en ${elaborationDate}.";
                   
                   
