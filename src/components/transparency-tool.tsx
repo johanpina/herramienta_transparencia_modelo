@@ -575,7 +575,7 @@ function TransparencyTool() {
   }
 
   const handleSaveResponses = () => {
-    console.log('Guardando respuestas:', formData)
+    
     toast({
       title: "Respuestas guardadas",
       description: "Tus respuestas han sido guardadas exitosamente.",

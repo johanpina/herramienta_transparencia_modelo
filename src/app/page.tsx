@@ -68,7 +68,7 @@ export default function LandingPage() {
           </div>
 
           {/* Version */}
-          <div className="text-sm text-gray-600">V.3.0.2</div>
+          <div className="text-sm text-gray-600">V.3.0.8</div>
 
           {/* Title */}
           <h1 className="text-4xl font-bold mb-6">
