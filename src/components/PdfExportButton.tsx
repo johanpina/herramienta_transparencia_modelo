@@ -23,6 +23,7 @@ export function PdfExportButton({ targetId, fileName = 'ficha.pdf' }: Props) {
   const today = new Date();
   const year = today.getFullYear();                          // 2025 → 2026 …
   const elaborationDate = format(today, 'dd/MM/yyyy');       // 06/05/2025
+  const version = process.env.NEXT_PUBLIC_VERSION || '0.0.0'; // versión de la app
 
   /* 3. Hook con la nueva API */
   const handlePrint = useReactToPrint({
@@ -43,7 +44,7 @@ export function PdfExportButton({ targetId, fileName = 'ficha.pdf' }: Props) {
         
         /* --- Pie centrado, 2 líneas, numeración --- */
         @bottom-center {
-          content:"Herramienta del GobLab UAI - Licencia MPL-2.0\\A"
+          content:"Herramienta del GobLab UAI - Licencia MPL-2.0. - Version V.${version}\\A"
                   "Genera tu ficha en: https://algoritmospublicos.cl/herramientas \\A"
                   "© ${year} Ficha de transparencia del modelo elaborada en ${elaborationDate}.";
                   

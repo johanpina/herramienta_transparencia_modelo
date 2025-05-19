@@ -17,6 +17,7 @@ export function PreviewFicha({ formData, onClose, isPdfGeneration = false }: Pre
   const currentDate = new Date()
   const year = currentDate.getFullYear()
   const elaborationDate = format(currentDate, 'dd/MM/yyyy')
+  const version = process.env.NEXT_PUBLIC_VERSION  || '0.0.0' // versión de la app
 
   useEffect(() => {
     const img1 = document.createElement('img');
@@ -205,8 +206,24 @@ export function PreviewFicha({ formData, onClose, isPdfGeneration = false }: Pre
           ))}
         </div>
 
+        <div className="bg-gray-50 p-4 rounded-lg backdrop-blur-sm text-justify">
+          <h3 className="font-semibold text-center">Exención de responsabilidad</h3>
+          <div className="bg-gray-50 p-4 rounded-lg backdrop-blur-sm">
+              <p className="break-words overflow-wrap">
+                La ficha de transparencia es una herramienta desarrollada para apoyar la transparencia en la implementación de modelos de ciencia de datos e inteligencia artificial (IA). La ficha está diseñada únicamente como un soporte para quienes buscan entregar mayor información a sus usuarios o al público sobre el desarrollo de sus modelos, con el fin de fomentar la explicabilidad de las decisiones que utilizan IA o ciencia de datos. Esta es una herramienta de referencia, que debe ser completada con la información requerida por los encargados de las instituciones que la utilizarán.
+              </p>
+              <p className="break-words overflow-wrap">
+                La Universidad Adolfo Ibáñez (UAI) no ofrece garantías sobre el funcionamiento o el desempeño de los sistemas de ciencia de datos e IA que utilicen esta ficha. La Universidad no es responsable de ningún tipo de daño directo, indirecto, incidental, especial o consecuente, ni de pérdidas de beneficios que puedan surgir directa o indirectamente de la aplicación de la ficha en el uso o la confianza en los resultados obtenidos a través de esta herramienta.
+              </p>
+              <p className="break-words overflow-wrap">
+                El empleo de las herramientas desarrolladas por la Universidad no implica ni constituye un sello ni certificado de aprobación por parte de la Universidad Adolfo Ibáñez respecto al cumplimiento legal, ético o funcional de un algoritmo de inteligencia artificial. La Universidad Adolfo Ibáñez no se hace responsable de la implementación de los algoritmos de inteligencia artificial que utilicen esta ficha, ni de las decisiones que se tomen en base a la información proporcionada por la misma.               
+              </p>
+            </div>
+
+        </div>
+
         <footer className="mt-8 text-center text-sm text-gray-500 no-print">
-          <p>Herramienta del GobLab UAI - Licencia  MPL-2.0.</p>
+          <p>Herramienta del GobLab UAI - Licencia  MPL-2.0. - Version V.{version}</p>
           <p>© {year} Ficha de transparencia del modelo elaborada en {elaborationDate}. </p>
         </footer>
         
