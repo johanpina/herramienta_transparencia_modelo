@@ -18,7 +18,8 @@ export default function LandingPage() {
   const [organization, setOrganization] = useState('')
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const router = useRouter()
-
+  const version = process.env.NEXT_PUBLIC_VERSION || '0.0.0';
+  
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (email) {
@@ -68,7 +69,7 @@ export default function LandingPage() {
           </div>
 
           {/* Version */}
-          <div className="text-sm text-gray-600">V.3.0.8</div>
+          <div className="text-sm text-gray-600">V.{version}</div>
 
           {/* Title */}
           <h1 className="text-4xl font-bold mb-6">
