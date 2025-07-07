@@ -582,6 +582,7 @@ function TransparencyTool() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const [feedback, setFeedback] = useState('')
   const [organization, setOrganization] = useState('')
+  const [expandedTooltip, setExpandedTooltip] = useState<string | null>(null);
 
   useEffect(() => {
     const userEmail = localStorage.getItem('userEmail')
@@ -838,16 +839,38 @@ function TransparencyTool() {
                             {`${sections.findIndex(s => s.id === activeSection) + 1}.${questionIndex + 1} ${question.text}`}
                             {question.isRequired && <span className="text-red-500 ml-1">*</span>}
                           </Label>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <HelpCircle className="h-5 w-5 text-gray-400" />
-                              </TooltipTrigger>
-                              <TooltipContent>
+                          <div className="relative">
+                            <button
+                              type="button"
+                              aria-label="Mostrar ayuda"
+                              onClick={() => setExpandedTooltip(expandedTooltip === question.id ? null : question.id)}
+                              className="focus:outline-none"
+                            >
+                              <HelpCircle className="h-5 w-5 text-gray-400 cursor-pointer" />
+                            </button>
+                            {/* Tooltip personalizado para click/touch */}
+                            {expandedTooltip === question.id && (
+                              <div
+                                className="absolute right-0 z-50 mt-2 w-64 rounded-md bg-gray-100 p-4 shadow-lg text-sm text-gray-800"
+                                style={{ minWidth: '200px' }}
+                                onClick={() => setExpandedTooltip(null)}
+                                tabIndex={0}
+                                role="dialog"
+                              >
                                 <p>{question.tooltip}</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
+                                <div className="text-right mt-2">
+                                  <button
+                                    type="button"
+                                    className="text-blue-600 text-xs"
+                                    aria-label="Cerrar tooltip"
+                                    onClick={e => { e.stopPropagation(); setExpandedTooltip(null); }}
+                                  >
+                                    &#10005;
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                         {renderQuestion(question, sections.findIndex(s => s.id === activeSection), questionIndex)}
                       </div>
