@@ -21,10 +21,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
+//import { ScrollArea } from "@/components/ui/scroll-area"
+//import { Separator } from "@/components/ui/separator"
 import Image from 'next/image'
-import Link from 'next/link'
+//import Link from 'next/link'
 import { InfoSidebar } from '@/components/InfoSidebar'
 
 interface Question {
@@ -57,55 +57,67 @@ const sections: Section[] = [
     questions: [
       {
         id: 'nombreModelo1',
-        text: 'Nombre del modelo',
+        text: 'Nombre del SDA (Sistema de Decisiones Automatizado)',
         type: 'text',
         isRequired: true,
-        tooltip: 'Ingrese el nombre completo del modelo'
+        tooltip: 'Nombre identificatorio del sistema de decisiones automatizado (modelo, algoritmo o herramienta)',
+        placeholder: 'Modelo PrioriSalud para priorización de pacientes (caso ejemplo ficticio)'
       },
       {
         id: 'tipoModelo2',
-        text: '¿Qué tipo de modelo es?',
+        text: '¿Qué tipo de SDA es?',
         type: 'textarea',
         isRequired: true,
-        tooltip: 'Esto incluye detalles básicos de la arquitectura del modelo, como si es un clasificador de Naive Bayes, una Red Neuronal Convolucional, etc. Esto es probablemente relevante para desarrolladores de software y modelos, así como para personas conocedoras de aprendizaje automático, para resaltar qué tipos de suposiciones están codificadas en el sistema.',
-        placeholder: 'Ejemplo: Un modelo Red Neuronal Convolucional que toma como entrada imágenes de rayos X.'
+        tooltip: 'Indica si el SDA es un modelo predictivo, sistema de recomendación, clasificación, etc, y cuál es su arquitectura.',
+        placeholder: 'Modelo de clasificación supervisada.'
       },
       {
         id: 'propositoModelo3',
-        text: 'Describa el propósito y funcionalidad del modelo',
+        text: 'Describa el propósito del proyecto y funcionalidad del SDA dentro de él',
         type: 'textarea',
         isRequired: true,
-        tooltip: ''
+        tooltip: 'Explica el objetivo general del proyecto y cómo el SDA contribuye a lograrlo.',
+        placeholder: 'El proyecto busca mejorar los tiempos de atención en listas de espera. El SDA clasifica a los pacientes en tres niveles de prioridad (alta, media y baja) para facilitar su asignación a especialistas.'
       },
       {
         id: 'porqueModeloTA4',
-        text: '¿Por qué se decidió utilizar este SDA en lugar de otro tipo de solución?',
+        text: '¿Por qué se decidió utilizar este SDA en lugar de otro tipo de solución no algorítmica?',
         type: 'textarea',
         isRequired: false,
-        tooltip: ''
+        tooltip: 'Justifica la elección de una solución algorítmica frente a otras alternativas posibles, como reglas manuales.',
+        placeholder: 'La priorización previa era manual, heterogénea y dependía del criterio de cada centro de salud. El SDA permite mayor consistencia, trazabilidad y eficiencia en la asignación de prioridades.'
       },
       {
         id: 'alcanzarResultadosTA5',
-        text: '¿Cómo el modelo alcanza u obtiene sus resultados?',
+        text: '¿Qué tarea(s) realiza el SDA para lograr alcanzar los resultados del proyecto? ',
         type: 'textarea',
         isRequired: false,
-        tooltip: 'Describa el flujo de funciomaiento de su sistema para generar un resultado'
+        tooltip: 'Describe la acción específica que realiza el SDA (por ejemplo: predecir, clasificar, priorizar).',
+        placeholder: 'Clasifica automáticamente a los pacientes ingresados en listas de espera en una categoría de prioridad.'
       },
       {
         id: 'usoPrevistoModelo6',
-        text: '¿Cuál es el uso previsto del modelo?',
+        text: '¿Cuál es el uso previsto del SDA?',
         type: 'textarea',
         isRequired: true,
-        tooltip: '¿Qué puede esperar el usuario directo del modelo al emplearlo?. Esta sección detalla si el modelo se desarrolló con tareas generales o específicas en mente. Los casos de uso pueden estar definidos de manera amplia o estrecha según lo que los desarrolladores pretendan. Por ejemplo, si el modelo se construyó simplemente para etiquetar imágenes, esta tarea debería indicarse como el caso de uso principal previsto.',
-        placeholder: '¿Qué puede esperar el usuario directo del modelo al emplearlo?. Esta sección detalla si el modelo se desarrolló con tareas generales o específicas en mente. Los casos de uso pueden estar definidos de manera amplia o estrecha según lo que los desarrolladores pretendan. Por ejemplo, si el modelo se construyó simplemente para etiquetar imágenes, esta tarea debería indicarse como el caso de uso principal previsto.'
+        tooltip: 'Indica en qué contexto y para qué fin se diseñó el uso del SDA.',
+        placeholder: 'Asignar prioridades en las listas de espera de atención médica especializada dentro del sistema público de salud.'
+      },
+      {
+        id: 'usoPrevistoModelo6y1',
+        text: '¿Qué resultado puede esperar el usuario directo del SDA?',
+        type: 'textarea',
+        isRequired: true,
+        tooltip: 'Especifica cuál es la salida o respuesta esperada por parte de quien interactúa directamente con el SDA, siendo esta la persona afectada por las decisiones del sistema, persona que interactura directamente con el sistema y se ve afectada (para bien o para mal) por las decisiones de este ',
+        placeholder: 'El profesional de salud recibe una categoría sugerida de prioridad para cada paciente, que puede revisar y confirmar.'
       },
       {
         id: 'usosNocontextModelo7',
-        text: '¿Qué usos están fuera del alcance del modelo?',
+        text: '¿Qué usos están fuera del alcance del SDA?',
         type: 'textarea',
         isRequired: false,
-        tooltip: 'Aquí, la ficha del modelo debería resaltar la tecnología con la que el modelo podría confundirse fácilmente, o contextos relacionados a los que los usuarios podrían intentar aplicar el modelo.',
-        placeholder: 'Aquí, la ficha del modelo debería resaltar la tecnología con la que el modelo podría confundirse fácilmente, o contextos relacionados a los que los usuarios podrían intentar aplicar el modelo.'
+        tooltip: 'Detalla usos no permitidos o no contemplados originalmente en el diseño del SDA.',
+        placeholder: 'No debe usarse para tomar decisiones clínicas ni para rechazar la atención a ningún paciente.'
       }
       /*{
         id: 'proyectoExistente',
@@ -133,35 +145,35 @@ const sections: Section[] = [
     questions: [
       {
         id: 'desarrolladorModelo8',
-        text: '¿Qué persona u organización desarrolló el modelo?',
+        text: 'Nombre de la organización responsable del SDA',
         type: 'textarea',
         isRequired: true,
-        tooltip: '',
-        placeholder: "Esto puede ser utilizado por todas las partes interesadas para inferir detalles relacionados con el desarrollo del modelo y posibles conflictos de interés."
+        tooltip: 'Entidad o institución que lidera el desarrollo, gestión o implementación del SDA. Si la institución que desarrolla el SDA y la institución que lo implementa son diferentes, indique la institución que lo implementa (institución que lo usa)',
+        placeholder: "Departamento de Gestión de la Demanda - Hospital SDA"
       },
       {
         id: 'versionModelo9',
-        text: '¿Cuál es la versión del modelo?',
+        text: '¿En qué versión se encuentra el SDA? ',
         type: 'text',
         isRequired: false,
-        tooltip: 'Describa el número de la versión del modelo. Ej: 1.0.0',
-        placeholder: 'Describa el número de la versión del modelo. Ej: 1.0.0',
+        tooltip: 'Indica el número o identificador de la versión actual del SDA. \n Formato esperado: Número-versión',
+        placeholder: '1.3 2024/11 o 1.3.0',
       },
       {
         id: 'fechaModelo10',
-        text: '¿Cuándo se desplegó o implementó este modelo?',
-        type: 'date',
+        text: 'Fecha de implementación del SDA',
+        type: 'text',
         isRequired: true,
-        tooltip: 'Esto es útil para que todas las partes interesadas se informen sobre las técnicas y fuentes de datos que probablemente estuvieron disponibles durante el desarrollo del modelo.',
-        placeholder: 'YYYY/MM/DD',
+        tooltip: 'Fecha en que el SDA comenzó a ser utilizado operacionalmente. en formato AAAA/MM',
+        placeholder: '2024/11',
       },
       {
         id: 'linkModelo11',
-        text: '¿Dónde se pueden encontrar recursos para obtener información adicional del proyecto?',
+        text: 'Recursos para obtener más información del proyecto',
         type: 'text',
         isRequired: true,
-        tooltip: 'Por ejemplo, link a la página institucional',
-        placeholder: 'Por ejemplo, link a la página institucional',
+        tooltip: 'Enlaces, documentos o contactos para ampliar la información sobre el SDA y su uso.',
+        placeholder: 'http://www.salud.gob.cl/priorisalud',
         /*dependsOn: {
           questionId: 'nivelImpacto',
           value: 75
@@ -169,48 +181,85 @@ const sections: Section[] = [
       },
       {
         id: 'citaModelo12',
-        text: '¿Cómo debería citarse el modelo?',
+        text: '¿Cómo citar o hacer referencia formal a este SDA?',
         type: 'textarea',
         isRequired: true,
-        tooltip: '',
-        placeholder: ''
+        tooltip: 'Formato sugerido: Nombre institución (Año). Nombre sistema. Enlace. ',
+        placeholder: 'Hospital SDA (2024). PrioriSalud – Sistema de Prioridad Algorítmica para Listas de Espera. www.salud.gob.cl/priorisalud'
       },
       {
         id: 'licenciaModelo13',
-        text: '¿Qué tipo de licencia tiene el modelo?',
+        text: '¿Qué tipo de licencia tiene el SDA?',
         type: 'text',
         isRequired: true,
-        tooltip: '',
-        placeholder: ''
+        tooltip: 'Tipo de licencia legal que regula el uso del SDA (por ejemplo: software libre, licencia propietaria, No Aplica, etc.).',
+        placeholder: 'Licencia pública de uso institucional.'
       },
-      {
+      /*{
         id: 'contactoModelo14',
         text: '¿Hay algún canal de reclamos o sugerencias mediante los cuales las personas puedan solicitar más información?',
         type: 'textarea',
         isRequired: false,
         tooltip: '',
         placeholder: ''
-      },
+      },*/
     ],
   },
   {
-    id: 'Clasificación',
-    title: 'Clasificación',
+    id: 'Categorización o elaboración de perfiles',
+    title: 'Categorización o elaboración de perfiles',
     questions: [
       {
         id: 'classModeloTA15',
-        text: '¿El modelo es de clasificación?',
+        text: '¿El SDA categoriza, clasifica o elabora perfiles o etiquetas de individuos?',
         type: 'radio',
         options: ['Sí', 'No'],
         isRequired: true,
-        tooltip: ''
+        tooltip: 'Indica si el SDA asigna etiquetas o perfiles a personas, como "aprobado", "alto riesgo", "prioritario", etc.'
       },
       {
         id: 'classModelocategoriasTA16',
-        text: '¿Qué perfiles o categorías asigna o existen?',
+        text: '¿Cuáles son esos perfiles o categorías? Describa brevemente cada uno.',
         type: 'textarea',
         isRequired: true,
-        tooltip: 'Indique el estado actual del cumplimiento normativo del proyecto',
+        tooltip: 'Lista y explica el significado de cada categoría o perfil que el SDA asigna.',
+        placeholder: 'Alta prioridad: riesgo alto para la salud si no recibe atención en corto plazo. Media: condición estable pero requiere seguimiento. Baja: casos sin urgencia.',
+        dependsOn: {
+          questionId: 'classModeloTA15',
+          value: 'Sí'
+        }
+      },
+      {
+        id: 'classModelocategoriasTA16y1',
+        text: 'Indique el motivo o fundamento en virtud de los que la categoría es relevante para que el SDA alcance sus resultados',
+        type: 'textarea',
+        isRequired: false,
+        tooltip: 'Explica por qué esas categorías ayudan a cumplir con el propósito del SDA.',
+        placeholder: 'La categoría determina el orden en que se otorgan las horas médicas, lo que permite gestionar mejor los recursos limitados.',
+        dependsOn: {
+          questionId: 'classModeloTA15',
+          value: 'Sí'
+        }
+      },
+      {
+        id: 'classModelocategoriasTA16y2',
+        text: 'Indique la metodología que utiliza el SDA para asignar las categorías.',
+        type: 'textarea',
+        isRequired: false,
+        tooltip: 'Describe el procedimiento técnico o lógico para categorizar (modelo estadístico, reglas, umbrales, etc.).',
+        placeholder: 'Modelo de clasificación entrenado con datos históricos, utilizando Random Forest y calibrado con validación cruzada.',
+        dependsOn: {
+          questionId: 'classModeloTA15',
+          value: 'Sí'
+        }
+      },
+      {
+        id: 'classModelocategoriasTA16y3',
+        text: 'Indique el efecto de las variables en la asignación de categorías. ',
+        type: 'textarea',
+        isRequired: false,
+        tooltip: '¿Qué variables son relevantes para esta asignación de categorías?',
+        placeholder: 'La variable más influyente es el tipo de diagnóstico, seguida por edad del paciente, historial médico y situación socioeconómica.',
         dependsOn: {
           questionId: 'classModeloTA15',
           value: 'Sí'
@@ -218,26 +267,17 @@ const sections: Section[] = [
       },
       {
         id: 'classModelometodologiaTA17',
-        text: '¿Qué forma, metodología o mecanismo usa el modelo para clasificar los datos? ¿Cuáles son los umbrales de decisión?',
+        text: 'Consecuencias previstas que el uso de datos personales en el contexto del SDA puede tener en el titular de datos ',
         type: 'textarea',
         isRequired: false,
         tooltip: '',
+        placeholder: 'La categorización podría influir en los tiempos de espera, generando impactos en el acceso a la salud.',
         dependsOn: {
           questionId: 'classModeloTA15',
           value: 'Sí'
         }
       },
-      {
-        id: 'classModeloefestovariablesTA18',
-        text: '¿Qué efecto tiene cada variable o parámetro en la asignación de categoría, etiqueta, perfil o posición?',
-        type: 'textarea',
-        isRequired: false,
-        tooltip: '',
-        dependsOn: {
-          questionId: 'classModeloTA15',
-          value: 'Sí'
-        }
-      },
+      
       {
         id: 'classModelorelevanciaTA19',
         text: '¿Por qué la categoría, perfil o prioridad es relevante para que el modelo alcance sus resultados?',
@@ -253,33 +293,41 @@ const sections: Section[] = [
     ],
   },
   {
-    id: 'Métricas de rendimiento',
-    title: 'Métricas de rendimiento',
+    id: 'Métricas de desempeño',
+    title: 'Métricas de desempeño',
     questions: [
       {
         id: 'metricasModelo20',
-        text: '¿Qué métricas utiliza para medir el rendimiento de su modelo?',
+        text: '¿Qué métricas se utilizan para medir el desempeño del SDA?',
         type: 'textarea',
         isRequired: true,
-        tooltip: ''
+        tooltip: 'Indica las métricas de evaluación utilizadas, como precisión, recall, AUC, etc.',
+        placeholder: 'Exactitud, recall para la clase “alta prioridad” y matriz de confusión.'
       },
       {
         id: 'umbralDecisionModelo21',
-        text: '¿Cuál es el umbral de decisión del modelo?',
-        type: 'slider',
-        min: 0,
-        max: 1,
-        step: 0.1,
-        isRequired: false,
-        tooltip: 'Indique el estado actual del cumplimiento normativo del proyecto'
-      },
-      {
-        id: 'caluloMedicionesModelos22',
-        text: '¿Cómo se calculan las mediciones y estimaciones de estas métricas?',
+        text: '¿A partir de que valor se considera que se obtiene un buen desempeño? Contestar para cada métrica establecida',
         type: 'textarea',
         isRequired: false,
-        tooltip: 'También se deben incluir detalles sobre cómo se aproximan estos valores (por ejemplo, promedio de 5 ejecuciones, validación cruzada de 10 pliegues).',
-        placeholder: 'Por ejemplo, esto puede incluir desviación estándar, varianza, intervalos de confianza o divergencia KL.'
+        tooltip: 'Define el umbral o rango aceptable de cada métrica para considerar que el SDA funciona bien.',
+        placeholder: 'Recall superior a 0.80 para alta prioridad y exactitud total mayor a 0.85.'
+      },
+      {
+        id: 'umbralDecisionModelo21y1',
+        text: '¿Qué valor se obtuvo en la medición de dicha métrica? Contestar para cada métrica',
+        type: 'textarea',
+        isRequired: false,
+        tooltip: 'Indica el resultado real obtenido por el SDA en cada métrica.',
+        placeholder: 'Recall: 0.83, Exactitud: 0.87'
+      },
+
+      {
+        id: 'caluloMedicionesModelos22',
+        text: '¿Por qué se decide usar estas métricas frente a otras? ',
+        type: 'textarea',
+        isRequired: false,
+        tooltip: 'Justifica la elección de métricas específicas en lugar de otras posibles.',
+        placeholder: 'El recall en “alta prioridad” es crítico para no dejar fuera a pacientes con mayor necesidad.'
       },
     ],
   },
@@ -289,18 +337,27 @@ const sections: Section[] = [
     questions: [
       {
         id: 'datosModelo23',
-        text: '¿Qué datos se utilizaron para el entrenamiento del modelo?',
+        text: '¿Qué datos se utilizaron para el entrenamiento del SDA?',
         type: 'textarea',
         isRequired: true,
-        tooltip: '',
-        
+        tooltip: 'Identifica el conjunto de datos utilizado en la etapa de entrenamiento (fuente, variables relevantes, periodo, tamaño, etc.).',
+        placeholder: 'Un subconjunto de pacientes con diagnóstico validado y decisión médica histórica, de los últimos 2 años. Se utilizó el 80% para entrenamiento.'
       },
       {
         id: 'ProcesamientoModelo24',
-        text: '¿Se aplicaron pasos de pre-procesamiento o limpieza a los datos? ¿Cuáles?',
+        text: 'Indique los pasos de preprocesamiento aplicados a los datos',
         type: 'textarea',
         isRequired: true,
-        tooltip: ''
+        tooltip: 'Describe las transformaciones aplicadas antes de entrenar o evaluar el modelo (limpieza, normalización, etc.).',
+        placeholder: 'Por ejemplo, Imputación de valores faltantes, normalización de variables numéricas, codificación de variables categóricas.'
+      },
+      {
+        id: 'ProcesamientoModelo24y1',
+        text: '¿Por qué se decidió usar estos datos para el SDA?',
+        type: 'textarea',
+        isRequired: true,
+        tooltip: 'Explica los criterios de selección de los datos usados (disponibilidad, calidad, representatividad).',
+        placeholder: 'Eran los únicos datos clínicos disponibles a nivel nacional y representaban adecuadamente a la población objetivo.',
       },
     ],
   },
@@ -310,25 +367,19 @@ const sections: Section[] = [
     questions: [
       {
         id: 'conjuntosEvalModelo25',
-        text: '¿Qué conjuntos de datos se utilizaron para evaluar el modelo?',
+        text: '¿Qué datos se utilizaron para evaluar el SDA?',
         type: 'textarea',
         isRequired: true,
-        tooltip: ''
-      },
-      {
-        id: 'eleccionEvaluacionModelo26',
-        text: '¿Por qué se eligieron estos conjuntos de datos?',
-        type: 'textarea',
-        isRequired: true,
-        tooltip: ''
+        tooltip: 'Identifica el conjunto de datos utilizado en la etapa de evaluación (fuente, variables relevantes, periodo, tamaño, etc.).',
+        placeholder: 'Un subconjunto de pacientes con diagnóstico validado y decisión médica histórica, de los últimos 2 años. Se utilizó el 20% para evaluación. '
       },
       {
         id: 'preprocesamientoEvaluacionModelo27',
-        text: '¿Cómo se preprocesaron los datos para la evaluación?',
+        text: 'Indique los pasos de preprocesamiento aplicados a los datos',
         type: 'textarea',
         isRequired: false,
-        tooltip: '(por ejemplo, tokenización de oraciones, recorte de imágenes, cualquier filtrado como eliminar imágenes sin caras)',
-        placeholder: '(por ejemplo, tokenización de oraciones, recorte de imágenes, cualquier filtrado como eliminar imágenes sin caras)'
+        tooltip: 'Describe las transformaciones aplicadas antes de entrenar o evaluar el modelo (limpieza, normalización, etc.).',
+        placeholder: 'Imputación de valores faltantes, normalización de variables numéricas, codificación de variables categóricas.'
       },
     ],
   },
@@ -338,18 +389,19 @@ const sections: Section[] = [
     questions: [
       {
         id: 'modeloCategoriza30',
-        text: '¿El modelo categoriza o perfila a las personas?',
+        text: '¿El SDA categoriza o perfila a las personas?',
         type: 'radio',
-        options: ['Sí', 'No'],
+        options: ['Sí', 'No', 'No aplica'],
         isRequired: true,
-        tooltip: ''
+        tooltip: 'Confirma si el modelo genera perfiles o categorías individuales que pueden afectar decisiones.'
       },
       {
         id: 'razonesdecisionNegativapersonas31',
-        text: '¿Qué circunstancias llevan a una decisión negativa respecto de la persona?',
+        text: '¿Qué circunstancias o factores llevan a plasmar, en el acto administrativo, una decisión negativa respecto de la persona?',
         type: 'textarea',
         isRequired: false,
-        tooltip: '',
+        tooltip: 'Describe cómo se relacionan los perfiles del SDA con decisiones desfavorables para las personas.',
+        placeholder: 'La asignación de “baja prioridad” puede significar una espera prolongada para la atención médica.',
         dependsOn: {
           questionId: '30_modeloCategoriza',
           value: 'Sí'
@@ -357,18 +409,19 @@ const sections: Section[] = [
       },
       {
         id: 'datosPersonalesTA32',
-        text: '¿El modelo utiliza datos personales?',
+        text: '¿El SDA utiliza datos personales?',
         type: 'radio',
         options: ['Sí', 'No'],
         isRequired: true,
-        tooltip: ''
+        tooltip: 'Confirma si el SDA procesa información que permite identificar directa o indirectamente a las personas.'
       },
       {
         id: 'cualesdatosPersonales321',
-        text: '¿Cuáles?',
+        text: 'En caso de que sí se usen datos personales, indicar cuáles',
         type: 'textarea',
         isRequired: false,
-        tooltip: '',
+        tooltip: 'Lista los tipos de datos personales utilizados (ej. nombre, edad, dirección, etc.).',
+        placeholder: 'Edad, dirección, diagnóstico médico, historial de hospitalizaciones.',
         dependsOn: {
           questionId: 'datosPersonalesTA32',
           value: 'Sí'
@@ -376,18 +429,19 @@ const sections: Section[] = [
       },
       {
         id: 'datoSensible33',
-        text: '¿El modelo utiliza algún dato sensible (por ejemplo, ley antidiscriminación)?',
+        text: '¿El SDA utiliza datos sensibles?',
         type: 'radio',
         options: ['Sí', 'No'],
         isRequired: true,
-        tooltip: ''
+        tooltip: 'Confirma si el SDA utiliza información considerada sensible según la normativa (ej. salud, datos biométricos).'
       },
       {
         id: 'tipoDatoSensible331',
-        text: '¿Cuáles tipos de datos sensibles se utilizaron?',
+        text: 'En caso de que sí se usen datos sensibles, indicar cuáles',
         type: 'textarea',
         isRequired: false,
-        tooltip: '',
+        tooltip: 'Lista los tipos de datos sensibles utilizados.',
+        placeholder: 'Diagnósticos médicos y condiciones de salud.',
         dependsOn: {
           questionId: 'datoSensible33',
           value: 'Sí'
@@ -395,51 +449,55 @@ const sections: Section[] = [
       },
       {
         id: 'asuntosCentralesModelo34',
-        text: '¿Se pretende que el modelo informe decisiones sobre asuntos centrales para la vida o el florecimiento humano, como la salud o la seguridad? ¿O podría usarse de esa manera?',
+        text: '¿El SDA apoya o reemplaza la toma de decisiones sobre aspectos fundamentales de la vida de las personas? Por ejemplo, en ámbitos como educación, seguridad, salud, entre otros.',
         type: 'radio',
         options: ['Sí', 'No'],
         isRequired: true,
-        tooltip: ''
+        tooltip: 'Indica si el SDA incide directamente en decisiones críticas como acceso a salud, educación, beneficios, trabajo, etc.'
       },
       {
         id: 'tipoAsuntosCentralesModelo341',
-        text: '¿Cuáles?',
+        text: 'En caso de que sí, ¿en qué ámbito?',
         type: 'textarea',
         isRequired: false,
-        tooltip: '',
+        tooltip: 'Describe en qué área afecta directamente las decisiones críticas, como acceso a salud, educación, beneficios, trabajo, etc.',
+        placeholder: 'Acceso a servicios de salud.',
         dependsOn: {
           questionId: 'asuntosCentralesModelo34',
           value: 'Sí'
         }
       },
       {
-        id: 'estrategiasMitigacionModelo35',
-        text: '¿Qué estrategias de mitigación de riesgos se utilizaron durante el desarrollo del modelo?', 
-        type: 'textarea',
-        isRequired: true,
-        tooltip: '',
-      },
-      {
         id: 'riesgoUsoModelo36',
-        text: '¿Qué riesgos pueden estar presentes en el uso del modelo?',
+        text: 'Describe los posibles riesgos éticos identificados en relación a la implementación del proyecto',
         type: 'textarea',
         isRequired: false,
-        tooltip: 'Intenta identificar a los posibles receptores, la probabilidad y la magnitud de los daños. Si no se pueden determinar, indique que se consideraron pero siguen siendo desconocidos.',
+        tooltip: 'Expone los principales problemas éticos detectados (sesgos, opacidad, exclusión, impacto social, medioambiental, etc.).',
+        placeholder: 'Sesgo contra personas mayores o con menos historial clínico en el sistema. Discriminación indirecta por nivel educacional.'
       },
       {
         id: 'casosUsoconocidos37',
-        text: '¿Se conocen casos de uso indebido del modelo?',
+        text: '¿Se conocen casos de uso particulares que sean problemáticos para la institución, sus usuarios o las personas afectadas por el SDA? Descríbelos y explica cómo se abordan esos casos',
         type: 'textarea',
         isRequired: false,
-        tooltip: ''
+        tooltip: 'Relata ejemplos donde el uso del SDA haya generado dudas, conflictos o efectos no deseados.',
+        placeholder: 'En zonas rurales con mala calidad de datos, el SDA ha clasificado erróneamente a pacientes. Se estableció un protocolo de revisión manual en estos casos.'
+      },
+      {
+        id: 'estrategiasMitigacionModelo35',
+        text: '¿Qué medidas y acciones se realizaron para mitigar posibles riesgos éticos?', 
+        type: 'textarea',
+        isRequired: true,
+        tooltip: 'Describe acciones tomadas para reducir riesgos como sesgos, discriminación o falta de transparencia.',
+        placeholder: 'Se implementó una revisión médica posterior obligatoria, y se entrena el modelo con criterios de equidad.'
       },
       {
         id: 'otraConsideracion38',
-        text: 'De existir alguna otra consideración ética adicional que se haya tenido en cuenta en el desarrollo del modelo, indicar en este apartado.',
+        text: 'De existir alguna otra consideración ética adicional que se haya tenido en cuenta durante el desarrollo y operacionalización del SDA, indicar en este apartado.',
         type: 'textarea',
         isRequired: false,
-        tooltip: 'Por ejemplo, revisión por parte de un consejo externo o pruebas con una comunidad específica.',
-        placeholder: 'Por ejemplo, revisión por parte de un consejo externo o pruebas con una comunidad específica.'
+        tooltip: 'Espacio libre para incluir otros elementos éticos relevantes no cubiertos en las preguntas anteriores.',
+        placeholder: 'Se consultó a una mesa de bioética y a representantes de organizaciones de pacientes en la fase de diseño.'
       },
 
     ],
@@ -450,34 +508,38 @@ const sections: Section[] = [
     questions: [
       {
         id: 'pruebaAdicional39',
-        text: '¿Los resultados sugieren alguna prueba adicional?',
+        text: '¿Los resultados de implementación del SDA sugieren alguna prueba adicional? Descríbelas.',
         type: 'textarea',
         isRequired: false,
-        tooltip: ''
+        tooltip: 'Indica si es necesario realizar más validaciones o monitoreos para mejorar el desempeño o confianza.',
+        placeholder: 'Sí, se están planificando pruebas A/B para comparar su desempeño con la priorización tradicional.'
+
       },
-      {
-        id: 'grupoRelevante40',
-        text: '¿Hubo algún grupo relevante que no estuvo representado en el conjunto de datos de evaluación?',
-        type: 'radio',
-        options: ['Sí', 'No'],
-        isRequired: false,
-        tooltip: 'Indique el estado actual del cumplimiento normativo del proyecto'
-      },
+      
       {
         id: 'recomendacionesAdicionales41',
-        text: '¿Existen recomendaciones adicionales para el uso del modelo?',
+        text: '¿Existen recomendaciones adicionales para el uso del SDA en el proyecto?',
         type: 'textarea',
         isRequired: false,
-        tooltip: 'Si se han identificado desafíos legales, descríbalos aquí'
+        tooltip: 'Entrega sugerencias para mejorar o ajustar el uso del SDA durante su uso o en el futuro.',
+        placeholder: "Utilizarlo como apoyo, pero nunca como única fuente de decisión. Mantener revisión médica obligatoria."
       },
       {
         id: 'caracteristicasIdeales42',
-        text: '¿Cuáles son las características ideales de un conjunto de datos de evaluación para este modelo?',
+        text: '¿Cuáles son las características ideales de un conjunto de datos para este SDA?',
         type: 'textarea',
         isRequired: true,
-        tooltip: '',
-        placeholder: 'Ejemplos: \n Carpeta con imágenes de 20x20 \n Archivo csv con las columnas: edad,genero,salario, etc \n formulario predefinido con todas las respuestas',
+        tooltip: 'Define los atributos deseables en los datos para que el SDA funcione de forma óptima.',
+        placeholder: 'Cobertura nacional, datos clínicos actualizados, buena calidad en registros y variables sociales complementarias.',
 
+      },
+      {
+        id: 'grupoRelevante40',
+        text: '¿Existe algún grupo relevante que no está representado en el conjunto de datos utilizado en el SDA? Si es así, descríbalo.',
+        type: 'textarea',
+        isRequired: false,
+        tooltip: 'Indique el estado actual del cumplimiento normativo del proyecto',
+        placeholder: 'La población migrante reciente no está suficientemente representada en los datos históricos.'      
       },
     ],
   },
@@ -487,18 +549,19 @@ const sections: Section[] = [
     questions: [
       {
         id: 'reclamacionTA43',
-        text: '¿Existe una vía de reclamación especial respecto de las decisiones del modelo?',
+        text: '¿Existe una vía de reclamación a la que las personas puedan acceder para obetener más información del SDA o hacer llegar reclamos por sus decisiones?',
         type: 'radio',
         options: ['Sí', 'No'],
         isRequired: true,
-        tooltip: ''
+        tooltip: 'Indica si las personas afectadas por el SDA pueden reclamar o solicitar información sobre sus decisiones.'
       },
       {
         id: 'viaReclamacionTA44',
         text: '¿Cuál es la forma de acceder a la vía de reclamación?',
         type: 'textarea',
         isRequired: true,
-        tooltip: '',
+        tooltip: 'Describe los canales de acceso disponibles para interponer reclamos (web, correo, formulario, presencial etc.).',
+        placeholder:'A través del sitio web del Hospital SDA (www.salud.gob.cl/priorisalud) o en oficinas de atención ciudadana.',
         dependsOn: {
           questionId: 'reclamacionTA43',
           value: 'Sí'
@@ -696,14 +759,15 @@ function TransparencyTool() {
         {/* Elemento Izquierdo */}
         <div className="flex items-center space-x-2">
           <Image
-            src="/images/Logo_herramientas_algoritmos.png"
-            alt="HERRAMIENTAS ALGORITMOS ÉTICOS"
-            width={280} // Ajusta el tamaño de la imagen según sea necesario
+            src="/images/logo-goblab-uai.png"
+            alt="Gob_Lab UAI"
+            width={260} // Ajusta el tamaño de la imagen según sea necesario
             height={100}
             //objectFit='contain'
-          
+            
           />
         </div>
+        
 
         {/* Elemento Central */}
         <h1 className="text-3xl font-bold text-center flex-1 ">Ficha de transparencia del modelo</h1>
@@ -711,12 +775,12 @@ function TransparencyTool() {
         {/* Elemento Derecho */}
         <div className="flex items-center space-x-2">
           <Image
-            src="/images/logo-goblab-uai.png"
-            alt="Gob_Lab UAI"
-            width={260} // Ajusta el tamaño de la imagen según sea necesario
+            src="/images/herramientas.png"
+            alt="HERRAMIENTAS ALGORITMOS ÉTICOS"
+            width={280} // Ajusta el tamaño de la imagen según sea necesario
             height={100}
             //objectFit='contain'
-            
+          
           />
         </div>
       </div>

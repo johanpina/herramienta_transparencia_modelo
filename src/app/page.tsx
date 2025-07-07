@@ -55,17 +55,18 @@ export default function LandingPage() {
           {/* Header */}
           <div className="flex justify-between space-y-4 p-4 rounded-lg backdrop-blur-sm">
             <Image
-              src="/images/Logo_herramientas_algoritmos.png"
-              alt="Herramientas Algoritmos Éticos"
-              width={300}
-              height={80}
-            />
-            <Image
               src="/images/logo-goblab-uai.png"
               alt="Gob Lab UAI"
               width={300}
               height={80}
             />
+            <Image
+              src="/images/herramientas.png"
+              alt="Herramientas Algoritmos Éticos"
+              width={300}
+              height={80}
+            />
+            
           </div>
 
           {/* Version */}
@@ -79,16 +80,19 @@ export default function LandingPage() {
           {/* Description */}
           <div className="space-y-4 mb-8 text-gray-700">
             <p>
-            La presente herramienta es un apoyo para la elaboración de una ficha de transparencia para sistemas de decisiones automatizadas o semiautomatizadas (SDA), con el propósito de ayudar a los organismos públicos a cumplir con los estándares de transparencia algorítmica de sus sistemas.
+              Una ficha de transparencia es un documento claro, accesible y fácil de entender que resume la información clave sobre un sistema de decisiones automatizado (SDA). Este instrumento cumple una doble función: transparentar el funcionamiento de un algoritmo ante usuarios finales y actores externos, y servir como estándar de documentación interna para los sistemas automatizados implementados por organizaciones públicas o privadas.
             </p>
             <p>
-            Está destinada para ser utilizada en SDA que hayan completado la fase de desarrollo y evaluación, antes de la fase de implementación de la solución. Para más información sobre las fases, consultar la Guía Permitido Innovar (<Link href='https://www.lab.gob.cl/permitido-innovar' className="text-blue-600 underline hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500">https://www.lab.gob.cl/permitido-innovar</Link>). La ficha de transparencia es un documento que proporciona información relevante sobre la naturaleza, aspectos técnicos, funcionales y del proyecto del SDA. Desempeña un papel fundamental en la promoción de la transparencia, la rendición de cuentas y el uso ético de los algoritmos. La herramienta facilita la creación de esta ficha: ayuda a la identificación de la información relevante sobre el SDA que se debe transparentar y la presenta de manera clara, visible y comprensible tanto para los involucrados en el proceso institucional como para cualquier persona interesada.
+              Esta herramienta tiene como objetivo apoyar a instituciones de diversos sectores en la elaboración de fichas de transparencia para sistemas de decisiones automatizadas o semiautomatizadas (SDA), promoviendo una gestión responsable, ética y comprensible de estos sistemas. Su uso facilita el cumplimiento de estándares de transparencia algorítmica y contribuye a fortalecer la rendición de cuentas institucional, la confianza pública y el diseño centrado en las personas.
             </p>
             <p>
-            La herramienta consta de un total de 44 preguntas distribuidas en 9 secciones. Para completar adecuadamente todos los campos de la ficha, se requiere la participación de un equipo multidisciplinario de la institución, que incluya roles como el jefe de proyecto, analista de datos, responsable de datos, equipo legal, y encargado de comunicaciones y todos los demás que considere la institución.
+              En esta herramienta, utilizamos el término SDA (Sistema de Decisiones Automatizado) para referirnos a algoritmos, sistemas de inteligencia artificial o modelos de aprendizaje automático (machine learning) que intervienen en procesos de toma de decisiones, ya sea de forma automática o asistida. Elegimos este término para alinearnos con las Recomendaciones de Transparencia Algorítmica del Consejo para la Transparencia (CPLT), las cuales promueven su uso en el contexto nacional. Las preguntas del cuestionario incorporan y organizan los contenidos sugeridos por el CPLT, ayudando así a identificar áreas clave a transparentar y avanzar en el cumplimiento de buenas prácticas de gobernanza algorítmica.
             </p>
             <p>
-            Esta herramienta se basa en el enfoque de Model Cards for Model Reporting (Mitchell, 2019).
+              La herramienta está diseñada para ser utilizada con sistemas que ya han sido desarrollados y que se encuentran próximos a su implementación o etapa de pilotaje. El cuestionario consta de 47 preguntas agrupadas en 9 secciones. Se recomienda que sea completado por un equipo multidisciplinario que incluya perfiles como jefatura de proyecto, analistas o científicos de datos, responsables de datos, asesores legales, encargados de comunicaciones, y otros roles que la organización considere relevantes para reflejar adecuadamente el ciclo de vida del SDA.
+            </p>
+            <p>
+              Esta herramienta se inspira en el enfoque de Model Cards for Model Reporting (Mitchell et al., 2019), adaptado tanto al contexto del sector público chileno con las <a href="https://www.consejotransparencia.cl/wp-content/uploads/destacados/2025/03/GUIA-Transparencia-Algoritmica_ene2025_v3.pdf-copia.pdf">Recomendaciones de Transparencia Algorítmica</a> como a los principios éticos y de transparencia que deben guiar el desarrollo y uso de sistemas algorítmicos en cualquier organización comprometida con el uso responsable de estas tecnologías.
             </p>
 
             <div className="bg-blue-50 p-4 rounded-lg mb-8">
