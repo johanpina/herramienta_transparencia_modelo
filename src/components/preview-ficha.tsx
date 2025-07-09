@@ -106,7 +106,7 @@ export function PreviewFicha({ formData, onClose, isPdfGeneration = false }: Pre
             <ul className="list-disc list-inside mb-4 break-anywhere">
               <li><p className='mb-2 inline font-bold'>SDA desarrollado por:</p> <strong>{formData.desarrolladorModelo8 || 'No se especifica desarrollador del SDA'}</strong></li>
               <li><strong> Versión del SDA: {formData.versionModelo9 || 'No especificada'}</strong></li>
-              <li><strong>Fecha de implementación:</strong> {formData.fechaModelo10 ? format(new Date(formData.fechaModelo10), 'dd/MM/yyyy') : 'No especificada'}</li>
+              <li><strong>Fecha de implementación:</strong> {formData.fechaModelo10 ? formData.fechaModelo10 : 'No especificada'}</li>
               <li>{formData.tipoModelo2 || 'Tipo de SDA '}</li>
               {formData.linkModelo11 && <li><strong>Enlace: </strong>{formData.linkModelo11}</li>}
               {formData.citaModelo12 && <li><strong>Cómo citar:</strong> {formData.citaModelo12}</li>}
