@@ -26,6 +26,13 @@ import {
 import Image from 'next/image'
 //import Link from 'next/link'
 import { InfoSidebar } from '@/components/InfoSidebar'
+import {
+  trackToolStart,
+  trackSectionComplete,
+  trackToolComplete,
+  trackToolExport,
+  registerToolUser,
+} from '@/lib/analytics'
 
 interface Question {
   id: string;
@@ -598,6 +605,10 @@ function TransparencyTool() {
       }, sections[0])
 
       setActiveSection(lastAnsweredSection.id)
+    } else {
+      // Primera visita: registrar inicio de herramienta
+      trackToolStart()
+      if (userEmail) registerToolUser(userEmail)
     }
   }, [])
 
@@ -649,6 +660,7 @@ function TransparencyTool() {
   const handleNextSection = () => {
     const currentIndex = sections.findIndex(section => section.id === activeSection)
     if (currentIndex < sections.length - 1) {
+      trackSectionComplete(activeSection, currentIndex, sections.length)
       setActiveSection(sections[currentIndex + 1].id)
     }
   }
@@ -665,6 +677,8 @@ function TransparencyTool() {
 
   const handleOpenPreview = () => {
     if (isAllRequiredAnswered) {
+      trackToolComplete()
+      trackToolExport('pdf')
       setShowPreview(true)
     } else {
       toast({
