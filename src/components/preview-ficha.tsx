@@ -29,11 +29,10 @@ interface PreviewFichaProps {
   isPdfGeneration?: boolean
 }
 
-/** Ids de las preguntas que alimentan la portada, para no repetirlas en el cuerpo. */
+/** Ids de las preguntas que alimentan el encabezado del documento. */
 const PORTADA = {
-  nombre: 'd01_q01',        // Nombre del SDA
-  organizacion: 'd01_q02',  // Organización responsable
-  version: 'd02_q01',       // Versión
+  nombre: 'd01_q01',   // 1.1 Nombre del SDA
+  version: 'd02_q01',  // 2.1 ¿En qué versión se encuentra el SDA?
 }
 
 /** Respuesta de sí/no: se muestra como píldora para que se lea de un vistazo. */
@@ -86,7 +85,6 @@ export function PreviewFicha({ formData, onClose, isPdfGeneration = false }: Pre
   const version = process.env.NEXT_PUBLIC_VERSION || '0.0.0'
 
   const nombreSDA = formData[PORTADA.nombre] || 'Ficha de transparencia'
-  const organizacion = formData[PORTADA.organizacion]
   const versionSDA = formData[PORTADA.version]
 
   /* Sólo entran al documento las dimensiones con al menos una respuesta: una ficha
@@ -140,12 +138,10 @@ export function PreviewFicha({ formData, onClose, isPdfGeneration = false }: Pre
           opacity: printing ? 0.6 : 1,
         }}
       >
-        {/* ── Portada del documento ──
-            `breakAfter: page` la deja como carátula a propósito. Sin esto igual
-            quedaba sola: la primera dimensión no cabe entera en lo que resta de
-            la hoja y salta a la siguiente, dejando media página en blanco sin
-            explicación. Con el índice, esa página pasa a servir para algo. */}
-        <header style={{ breakInside: 'avoid', breakAfter: 'page' }}>
+        {/* ── Encabezado ──
+            Sin salto de página: el contenido arranca justo debajo, en la misma
+            hoja. El documento es la ficha, no un informe con carátula. */}
+        <header style={{ breakInside: 'avoid' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap', marginBottom: 18 }}>
             <LogoUAIGobLab height={32} rose={T.rose} ink={T.ink} mono={MONO} />
             <div style={{ fontWeight: 800, lineHeight: 0.95, textAlign: 'right', letterSpacing: -0.3 }}>
@@ -165,48 +161,30 @@ export function PreviewFicha({ formData, onClose, isPdfGeneration = false }: Pre
             <h1 style={{ fontFamily: SERIF, fontWeight: 500, fontSize: 28, letterSpacing: -0.8, margin: 0, lineHeight: 1.1, color: T.ink }}>
               {nombreSDA}
             </h1>
+            {/* La versión es la que el equipo declaró para el SDA (pregunta 2.1),
+                no la de la herramienta: esa va en el pie. */}
             <div style={{ display: 'flex', gap: 22, marginTop: 12, flexWrap: 'wrap', fontSize: 10.5, color: T.ink60 }}>
-              {organizacion && <span><strong style={{ color: T.ink80 }}>Responsable:</strong> {organizacion}</span>}
               {versionSDA && <span><strong style={{ color: T.ink80 }}>Versión:</strong> {versionSDA}</span>}
               <span><strong style={{ color: T.ink80 }}>Elaborada el:</strong> {elaborationDate}</span>
             </div>
           </div>
-
-          {/* Índice de lo que trae esta ficha. Sólo aparecen las dimensiones que
-              se respondieron, así que refleja el alcance real del documento. */}
-          <div style={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: 1.8, color: T.burgundy, marginBottom: 10 }}>
-            CONTENIDO
-          </div>
-          <ol style={{
-            listStyle: 'none', margin: 0, padding: 0,
-            columns: 2, columnGap: 30,
-          }}>
-            {dimensiones.map(d => (
-              <li key={d.n} style={{ display: 'flex', alignItems: 'baseline', gap: 9, padding: '5px 0', borderBottom: `1px solid ${T.line}`, breakInside: 'avoid' }}>
-                <span style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, color: T.rose }}>{d.n}</span>
-                <span style={{ fontSize: 11.5, color: T.ink80, flex: 1 }}>{d.title}</span>
-                <span style={{ fontFamily: MONO, fontSize: 9, color: T.ink40 }}>
-                  {d.respondidas.length}
-                </span>
-              </li>
-            ))}
-          </ol>
-          <p style={{ fontSize: 9.5, color: T.ink60, margin: '10px 0 0', lineHeight: 1.5 }}>
-            El número a la derecha indica cuántas preguntas se respondieron en cada dimensión.
-            Las dimensiones que no aplicaban a este sistema no aparecen en la ficha.
-          </p>
         </header>
 
         {/* ── Cuerpo: una sección por dimensión con respuestas ── */}
         <div className="print-columns" style={{ columnGap: 30 }}>
           {dimensiones.map(dim => {
             let bloqueActual: string | undefined
+            // Las secciones fluyen entre columnas en vez de ser bloques
+            // indivisibles: con `avoid-column`, Legal o Ciberseguridad —que no
+            // caben en una columna— empujaban páginas enteras en blanco.
             return (
-              <section key={dim.n} style={{ marginBottom: 16, breakInside: 'avoid-column' }}>
+              <section key={dim.n} style={{ marginBottom: 16 }}>
                 <h3 style={{
                   display: 'flex', alignItems: 'baseline', gap: 7, margin: '0 0 8px',
                   paddingBottom: 4, borderBottom: `1px solid ${T.roseLight}`,
                   fontFamily: SERIF, fontWeight: 500, fontSize: 15, letterSpacing: -0.3, color: T.ink,
+                  // Un título no debe quedar solo al pie de una columna.
+                  breakAfter: 'avoid', breakInside: 'avoid',
                   printColorAdjust: 'exact', WebkitPrintColorAdjust: 'exact',
                 }}>
                   <span style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, color: T.rose }}>{dim.n}</span>

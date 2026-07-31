@@ -2,22 +2,29 @@
  * Ajustes del documento de la ficha (#ficha-preview).
  *
  * La mayor parte del estilo va inline en preview-ficha.tsx con los tokens
- * "Civic Rose"; aquí queda solo lo que no se puede expresar inline: el número
- * de columnas y las reglas de corte entre columnas y páginas.
+ * "Civic Rose"; aquí queda lo que no se puede expresar inline: el número de
+ * columnas y las reglas de corte entre columnas y páginas.
+ *
+ * La vista previa usa las mismas dos columnas que el PDF a propósito: si en
+ * pantalla se leyera a una columna, el usuario aprobaría un documento con otra
+ * distribución de la que después descarga.
  */
 
-/* Pantalla: una sola columna, se lee como una página larga. */
 .print-columns {
-  column-count: 1;
+  column-count: 2;
+  column-gap: 30px;
 }
 
-/* Evita que un bloque de datos quede partido entre columnas o páginas. */
-.print-columns section {
-  break-inside: avoid-column;
-  page-break-inside: avoid;
+/* En pantallas angostas dos columnas dejan renglones de pocas palabras. */
+@media (max-width: 800px) {
+  .print-columns {
+    column-count: 1;
+  }
 }
 
+/* Evita párrafos partidos y renglones sueltos al final de una columna. */
 .print-columns p {
+  break-inside: avoid;
   orphans: 2;
   widows: 2;
 }
@@ -25,8 +32,8 @@
 @media print {
   .no-print { display: none !important; }
 
-  /* Dos columnas en el PDF; el resto de reglas de impresión las inyecta
-     PdfExportButton en `pageStyle`, que es lo que ve la ventana de impresión. */
+  /* El resto de las reglas de impresión las inyecta PdfExportButton en
+     `pageStyle`, que es lo que ve la ventana de impresión. */
   .print-columns {
     column-count: 2 !important;
     column-gap: 12mm !important;
