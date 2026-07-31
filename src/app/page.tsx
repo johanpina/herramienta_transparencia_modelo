@@ -167,12 +167,26 @@ const STEPS: [string, string][] = [
   ['04', 'Evalúa la herramienta'],
 ]
 
-/** Párrafos introductorios, tal como estaban en la portada anterior. */
-const INTRO = [
-  'Una ficha de transparencia es un documento claro, accesible y fácil de entender que resume la información clave sobre un sistema de decisiones automatizado (SDA). Este instrumento cumple una doble función: transparentar el funcionamiento de un algoritmo ante usuarios finales y actores externos, y servir como estándar de documentación interna para los sistemas automatizados implementados por organizaciones públicas o privadas.',
-  'Esta herramienta tiene como objetivo apoyar a instituciones de diversos sectores en la elaboración de fichas de transparencia para sistemas de decisiones automatizadas o semiautomatizadas (SDA), promoviendo una gestión responsable, ética y comprensible de estos sistemas. Su uso facilita el cumplimiento de estándares de transparencia algorítmica y contribuye a fortalecer la rendición de cuentas institucional, la confianza pública y el diseño centrado en las personas.',
-  'En esta herramienta, utilizamos el término SDA (Sistema de Decisiones Automatizado) para referirnos a algoritmos, sistemas de inteligencia artificial o modelos de aprendizaje automático (machine learning) que intervienen en procesos de toma de decisiones, ya sea de forma automática o asistida. Elegimos este término para alinearnos con las Recomendaciones de Transparencia Algorítmica del Consejo para la Transparencia (CPLT), las cuales promueven su uso en el contexto nacional. Las preguntas del cuestionario incorporan y organizan los contenidos sugeridos por el CPLT, ayudando así a identificar áreas clave a transparentar y avanzar en el cumplimiento de buenas prácticas de gobernanza algorítmica.',
-  'La herramienta está diseñada para ser utilizada con sistemas que ya han sido desarrollados y que se encuentran próximos a su implementación o etapa de pilotaje. Se recomienda que sea completada por un equipo multidisciplinario que incluya perfiles como jefatura de proyecto, analistas o científicos de datos, responsables de datos, asesores legales, encargados de comunicaciones, y otros roles que la organización considere relevantes para reflejar adecuadamente el ciclo de vida del SDA.',
+/**
+ * Definición corta de la ficha, en la gramática visual de la EIA: una frase de
+ * entrada y tarjetas con rótulo en mono. Antes eran cinco párrafos justificados
+ * que repetían lo que ya dicen las tarjetas del hero y la de "Mejor en equipo".
+ */
+const LEAD = 'Un documento breve y en lenguaje claro que resume cómo funciona un sistema de decisiones automatizado: para qué se usa, con qué datos se construyó, qué tan bien funciona y a quién reclamar si una decisión te afecta.'
+
+const CONCEPTOS: { rotulo: string; texto: React.ReactNode }[] = [
+  {
+    rotulo: 'QUÉ ES UN SDA',
+    texto: <>Un <strong>sistema de decisiones automatizado</strong>: algoritmos, sistemas de IA o modelos de aprendizaje automático que intervienen en decisiones, de forma automática o asistida. Usamos ese término para alinearnos con el Consejo para la Transparencia (CPLT).</>,
+  },
+  {
+    rotulo: 'CUÁNDO USARLA',
+    texto: <>Con sistemas <strong>ya desarrollados</strong>, próximos a implementarse o en etapa de pilotaje. No es un instrumento de diseño: documenta algo que ya existe.</>,
+  },
+  {
+    rotulo: 'EN QUÉ SE BASA',
+    texto: <>En el enfoque de <em>Model Cards for Model Reporting</em> (Mitchell et al., 2019), adaptado al sector público chileno con las Recomendaciones de Transparencia Algorítmica del CPLT, que el cuestionario incorpora y organiza.</>,
+  },
 ]
 
 const DISCLAIMER = [
@@ -285,23 +299,27 @@ export default function LandingPage() {
               ¿Qué es una ficha de transparencia?
             </h2>
           </div>
-          <div className="ft-intro" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px 36px' }}>
-            {INTRO.map((p, i) => (
-              <p key={i} style={{ fontSize: 14, lineHeight: 1.7, color: T.ink80, margin: 0, textAlign: 'justify' }}>{p}</p>
+          <p style={{ fontSize: 17, lineHeight: 1.6, color: T.ink80, margin: 0, maxWidth: 720 }}>
+            {LEAD}
+          </p>
+
+          <div className="ft-intro" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14 }}>
+            {CONCEPTOS.map(c => (
+              <div key={c.rotulo} style={{ background: '#fff', border: `1px solid ${T.roseLight}`, borderRadius: 12, padding: '16px 18px' }}>
+                <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 1.6, color: T.burgundy, marginBottom: 8 }}>{c.rotulo}</div>
+                <p style={{ fontSize: 13, lineHeight: 1.6, color: T.ink80, margin: 0 }}>{c.texto}</p>
+              </div>
             ))}
           </div>
-          <p style={{ fontSize: 13, lineHeight: 1.7, color: T.ink60, margin: 0, maxWidth: 900 }}>
-            Esta herramienta se inspira en el enfoque de <em>Model Cards for Model Reporting</em> (Mitchell et al., 2019), adaptado al contexto del sector público chileno con las{' '}
-            <a
-              href="https://www.consejotransparencia.cl/wp-content/uploads/destacados/2025/03/GUIA-Transparencia-Algoritmica_ene2025_v3.pdf-copia.pdf"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: T.burgundy, fontWeight: 600, textDecoration: 'none' }}
-            >
-              Recomendaciones de Transparencia Algorítmica
-            </a>{' '}
-            y a los principios éticos que deben guiar el uso de sistemas algorítmicos en cualquier organización.
-          </p>
+
+          <a
+            href="https://www.consejotransparencia.cl/wp-content/uploads/destacados/2025/03/GUIA-Transparencia-Algoritmica_ene2025_v3.pdf-copia.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontSize: 12.5, color: T.burgundy, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none' }}
+          >
+            Leer las Recomendaciones de Transparencia Algorítmica del CPLT <I.external />
+          </a>
         </div>
       </section>
 
@@ -412,6 +430,9 @@ export default function LandingPage() {
           .ft-hero-copy { border-right: none !important; }
           .ft-form-grid { grid-template-columns: 1fr; }
           .ft-intro { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 1100px) and (min-width: 700px) {
+          .ft-intro { grid-template-columns: 1fr 1fr !important; }
         }
         /* Con el logo institucional envuelto, el separador vertical sobra. */
         @media (max-width: 560px) {
