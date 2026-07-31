@@ -231,7 +231,7 @@ export default function LandingPage() {
             <span style={{ width: 6, height: 6, background: T.rose, borderRadius: 99 }} /> Herramienta · v{VERSION} · {sections.length} secciones
           </div>
           <h1 style={{ fontFamily: SERIF, fontWeight: 500, fontSize: 'clamp(34px, 4vw, 52px)', lineHeight: 1.02, margin: '0 0 16px', letterSpacing: -1.5, color: T.ink }}>
-            Ficha de<br /><em style={{ color: T.burgundy }}>transparencia</em> del modelo.
+            Herramienta de<br /><em style={{ color: T.burgundy }}>transparencia</em> algorítmica.
           </h1>
           <p style={{ fontSize: 16, lineHeight: 1.6, color: T.ink60, margin: '0 0 32px', maxWidth: 460 }}>
             Documenta tu sistema de decisiones automatizado en un lenguaje claro y accesible, y obtén un documento listo para publicar.

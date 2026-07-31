@@ -356,7 +356,7 @@ function TransparencyTool() {
           <div className="ft-logo-sep" style={{ width: 1, height: 22, background: T.roseLight }} />
           <div>
             <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 1.5, color: T.ink60 }}>HERRAMIENTA</div>
-            <div style={{ fontSize: 14, fontWeight: 600, marginTop: 1 }}>Ficha de transparencia del modelo</div>
+            <div style={{ fontSize: 14, fontWeight: 600, marginTop: 1 }}>Herramienta de Transparencia Algorítmica</div>
           </div>
         </div>
 
