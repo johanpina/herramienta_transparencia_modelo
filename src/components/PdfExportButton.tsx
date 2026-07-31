@@ -41,14 +41,17 @@ export function PdfExportButton({ targetId, fileName = 'ficha.pdf', onBeforePrin
     onBeforePrint: async () => { onBeforePrint?.(); },
     onAfterPrint: () => { onAfterPrint?.(); },
     pageStyle: `
-      @page:first {                       /* Portada */
+      /* Márgenes: 18mm a los lados sobre 210mm de ancho dejan 174mm de caja de
+         texto. Con 10mm el contenido quedaba pegado al borde de la hoja y sin
+         aire para encuadernar o perforar el documento impreso. */
+      @page:first {                       /* Primera hoja: encabezado arriba */
         size: A4 portrait;
-        margin: 10mm 10mm 22mm 10mm;      /* top | right | bottom | left */
+        margin: 14mm 18mm 24mm 18mm;      /* top | right | bottom | left */
       }
 
       @page {                             /* Resto de páginas */
         size: A4 portrait;
-        margin: 16mm 10mm 22mm 10mm;
+        margin: 18mm 18mm 24mm 18mm;
 
         /* Pie centrado, tres líneas. */
         @bottom-center {
