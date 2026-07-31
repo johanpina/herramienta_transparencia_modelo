@@ -69,6 +69,23 @@ export interface Section {
  */
 export const IA_GEN_QUESTION_ID: string | null = null
 
+/**
+ * Preguntas que identifican al SDA fuera del cuestionario: el encabezado del
+ * cuestionario y el del documento.
+ *
+ * Están acá y no repetidas en cada componente porque los identificadores cambian
+ * cuando se regenera `sections.ts`, y una referencia obsoleta no falla: el campo
+ * simplemente queda vacío. Ya pasó una vez — el sidebar siguió apuntando a
+ * `nombreModelo1` de la v4 y mostraba "Sistema sin nombre" con la ficha llena.
+ *
+ * `generar-sections.mjs` verifica que estos ids existan al regenerar.
+ */
+export const PREGUNTAS_CLAVE = {
+  nombre: 'd01_q01',        // 1.1 Nombre del SDA
+  organizacion: 'd01_q02',  // 1.2 Nombre de la organización responsable del SDA
+  version: 'd02_q01',       // 2.1 ¿En qué versión se encuentra el SDA?
+} as const
+
 /** ¿La respuesta cuenta como dada? Un multiselect vacío no cuenta. */
 export function isAnswered(question: Question, answers: Answers): boolean {
   const v = answers[question.id]

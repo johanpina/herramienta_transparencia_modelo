@@ -21,7 +21,7 @@ import { format } from 'date-fns'
 import { PdfExportButton } from '@/components/PdfExportButton'
 import { T, SERIF, MONO } from '@/lib/civic'
 import { I, LogoUAIGobLab } from '@/components/civic-icons'
-import { sections, visibleQuestions, isAnswered, type Answers, type Question } from '@/data/sections'
+import { sections, visibleQuestions, isAnswered, PREGUNTAS_CLAVE, type Answers, type Question } from '@/data/sections'
 
 interface PreviewFichaProps {
   formData: Answers
@@ -29,12 +29,9 @@ interface PreviewFichaProps {
   isPdfGeneration?: boolean
 }
 
-/** Ids de las preguntas que alimentan el encabezado del documento. */
-const PORTADA = {
-  nombre: 'd01_q01',        // 1.1 Nombre del SDA
-  organizacion: 'd01_q02',  // 1.2 Nombre de la organización responsable del SDA
-  version: 'd02_q01',       // 2.1 ¿En qué versión se encuentra el SDA?
-}
+/* Los ids del encabezado viven en question-types.ts, compartidos con el
+   cuestionario: duplicarlos fue lo que dejó el sidebar mostrando "Sistema sin
+   nombre" cuando cambió la numeración de las preguntas. */
 
 /** Respuesta de sí/no: se muestra como píldora para que se lea de un vistazo. */
 function Pildora({ value }: { value: string }) {
@@ -85,9 +82,9 @@ export function PreviewFicha({ formData, onClose, isPdfGeneration = false }: Pre
   const elaborationDate = format(currentDate, 'dd/MM/yyyy')
   const version = process.env.NEXT_PUBLIC_VERSION || '0.0.0'
 
-  const nombreSDA = formData[PORTADA.nombre] || 'Ficha de transparencia'
-  const organizacion = formData[PORTADA.organizacion]
-  const versionSDA = formData[PORTADA.version]
+  const nombreSDA = formData[PREGUNTAS_CLAVE.nombre] || 'Ficha de transparencia'
+  const organizacion = formData[PREGUNTAS_CLAVE.organizacion]
+  const versionSDA = formData[PREGUNTAS_CLAVE.version]
 
   /* Sólo entran al documento las dimensiones con al menos una respuesta: una ficha
      donde no aplicaba ciberseguridad no debe mostrar la sección vacía. */

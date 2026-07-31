@@ -310,6 +310,18 @@ L.push(``)
 
 writeFileSync(resolve(RAIZ, 'src/data/sections.ts'), L.join('\n'))
 
+/* Los ids que el sidebar y el encabezado del PDF referencian directamente. Si el
+   contenido se reordena y dejan de existir, el campo queda vacío sin fallar —
+   ya pasó con `nombreModelo1` de la v4 — así que se avisa acá. */
+const idsGenerados = new Set(secciones.flatMap(s => s.preguntas.map(p => p.id)))
+const clave = readFileSync(resolve(RAIZ, 'src/data/question-types.ts'), 'utf8')
+const bloqueClave = (clave.match(/PREGUNTAS_CLAVE = \{([\s\S]*?)\}/) || [])[1] || ''
+for (const [, campo, id] of bloqueClave.matchAll(/(\w+):\s*'([^']+)'/g)) {
+  if (!idsGenerados.has(id)) {
+    avisos.push(`PREGUNTAS_CLAVE.${campo} apunta a '${id}', que ya no existe — actualizar question-types.ts`)
+  }
+}
+
 const total = secciones.reduce((n, s) => n + s.preguntas.length, 0)
 console.log(`sections.ts generado · ${secciones.length} dimensiones · ${total} preguntas`)
 const tipos = {}

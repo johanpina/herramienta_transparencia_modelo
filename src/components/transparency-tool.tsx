@@ -27,6 +27,7 @@ import {
   visibleQuestions,
   sectionProgress,
   isSectionComplete,
+  PREGUNTAS_CLAVE,
   type Question,
   type Answers,
 } from '@/data/sections'
@@ -376,7 +377,7 @@ function TransparencyTool() {
           <div style={{ padding: '14px 14px 10px', borderBottom: `1px solid ${T.roseLight}` }}>
             <div style={{ fontSize: 11, fontFamily: MONO, letterSpacing: 1, color: T.ink60, marginBottom: 4 }}>SDA DOCUMENTADO</div>
             <div style={{ fontSize: 14.5, fontWeight: 600, lineHeight: 1.35 }}>
-              {formData.nombreModelo1 || 'Sistema sin nombre'}
+              {formData[PREGUNTAS_CLAVE.nombre] || 'Sistema sin nombre'}
             </div>
           </div>
           <nav style={{ flex: 1, overflow: 'auto', padding: 8 }}>
