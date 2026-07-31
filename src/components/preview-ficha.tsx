@@ -140,8 +140,12 @@ export function PreviewFicha({ formData, onClose, isPdfGeneration = false }: Pre
           opacity: printing ? 0.6 : 1,
         }}
       >
-        {/* ── Portada del documento ── */}
-        <header style={{ breakInside: 'avoid' }}>
+        {/* ── Portada del documento ──
+            `breakAfter: page` la deja como carátula a propósito. Sin esto igual
+            quedaba sola: la primera dimensión no cabe entera en lo que resta de
+            la hoja y salta a la siguiente, dejando media página en blanco sin
+            explicación. Con el índice, esa página pasa a servir para algo. */}
+        <header style={{ breakInside: 'avoid', breakAfter: 'page' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap', marginBottom: 18 }}>
             <LogoUAIGobLab height={32} rose={T.rose} ink={T.ink} mono={MONO} />
             <div style={{ fontWeight: 800, lineHeight: 0.95, textAlign: 'right', letterSpacing: -0.3 }}>
@@ -167,6 +171,30 @@ export function PreviewFicha({ formData, onClose, isPdfGeneration = false }: Pre
               <span><strong style={{ color: T.ink80 }}>Elaborada el:</strong> {elaborationDate}</span>
             </div>
           </div>
+
+          {/* Índice de lo que trae esta ficha. Sólo aparecen las dimensiones que
+              se respondieron, así que refleja el alcance real del documento. */}
+          <div style={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: 1.8, color: T.burgundy, marginBottom: 10 }}>
+            CONTENIDO
+          </div>
+          <ol style={{
+            listStyle: 'none', margin: 0, padding: 0,
+            columns: 2, columnGap: 30,
+          }}>
+            {dimensiones.map(d => (
+              <li key={d.n} style={{ display: 'flex', alignItems: 'baseline', gap: 9, padding: '5px 0', borderBottom: `1px solid ${T.line}`, breakInside: 'avoid' }}>
+                <span style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, color: T.rose }}>{d.n}</span>
+                <span style={{ fontSize: 11.5, color: T.ink80, flex: 1 }}>{d.title}</span>
+                <span style={{ fontFamily: MONO, fontSize: 9, color: T.ink40 }}>
+                  {d.respondidas.length}
+                </span>
+              </li>
+            ))}
+          </ol>
+          <p style={{ fontSize: 9.5, color: T.ink60, margin: '10px 0 0', lineHeight: 1.5 }}>
+            El número a la derecha indica cuántas preguntas se respondieron en cada dimensión.
+            Las dimensiones que no aplicaban a este sistema no aparecen en la ficha.
+          </p>
         </header>
 
         {/* ── Cuerpo: una sección por dimensión con respuestas ── */}
