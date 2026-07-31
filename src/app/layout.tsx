@@ -13,7 +13,7 @@ const fraunces = Fraunces({ subsets: ['latin'], style: ['normal', 'italic'], var
 const jetbrains = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono' })
 
 export const metadata: Metadata = {
-  title: 'Herramienta de Transparencia',
+  title: 'Herramienta de Transparencia Algorítmica',
   description: 'Una herramienta para la elaboración de fichas de transparencia para sistemas de decisiones automatizadas o semiautomatizadas.',
 }
 
