@@ -31,8 +31,9 @@ interface PreviewFichaProps {
 
 /** Ids de las preguntas que alimentan el encabezado del documento. */
 const PORTADA = {
-  nombre: 'd01_q01',   // 1.1 Nombre del SDA
-  version: 'd02_q01',  // 2.1 ¿En qué versión se encuentra el SDA?
+  nombre: 'd01_q01',        // 1.1 Nombre del SDA
+  organizacion: 'd01_q02',  // 1.2 Nombre de la organización responsable del SDA
+  version: 'd02_q01',       // 2.1 ¿En qué versión se encuentra el SDA?
 }
 
 /** Respuesta de sí/no: se muestra como píldora para que se lea de un vistazo. */
@@ -85,6 +86,7 @@ export function PreviewFicha({ formData, onClose, isPdfGeneration = false }: Pre
   const version = process.env.NEXT_PUBLIC_VERSION || '0.0.0'
 
   const nombreSDA = formData[PORTADA.nombre] || 'Ficha de transparencia'
+  const organizacion = formData[PORTADA.organizacion]
   const versionSDA = formData[PORTADA.version]
 
   /* Sólo entran al documento las dimensiones con al menos una respuesta: una ficha
@@ -164,6 +166,7 @@ export function PreviewFicha({ formData, onClose, isPdfGeneration = false }: Pre
             {/* La versión es la que el equipo declaró para el SDA (pregunta 2.1),
                 no la de la herramienta: esa va en el pie. */}
             <div style={{ display: 'flex', gap: 22, marginTop: 12, flexWrap: 'wrap', fontSize: 10.5, color: T.ink60 }}>
+              {organizacion && <span><strong style={{ color: T.ink80 }}>Responsable:</strong> {organizacion}</span>}
               {versionSDA && <span><strong style={{ color: T.ink80 }}>Versión:</strong> {versionSDA}</span>}
               <span><strong style={{ color: T.ink80 }}>Elaborada el:</strong> {elaborationDate}</span>
             </div>
