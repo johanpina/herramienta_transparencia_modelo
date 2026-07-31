@@ -1,746 +1,333 @@
 'use client'
 
+/**
+ * Cuestionario de la ficha de transparencia, con el sistema visual "Civic Rose"
+ * (ver src/lib/civic.ts) que ya usa la Evaluación de Impacto Algorítmico.
+ *
+ * Las preguntas viven en src/data/sections.ts y las reglas de visibilidad en
+ * question-types.ts, compartidas con el PDF: si cada uno decidiera por su cuenta
+ * qué pregunta aplica, el documento mostraría respuestas de preguntas ocultas.
+ *
+ * `tool_start` y el registro del correo se disparan en la portada.
+ */
+
 import { useState, useEffect, useRef } from 'react'
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/components/ui/use-toast"
-import { Check, HelpCircle, ChevronRight, ChevronLeft, Send } from 'lucide-react'
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Slider } from "@/components/ui/slider"
 import { CustomDatePicker } from "@/components/ui/date-picker"
 import 'react-datepicker/dist/react-datepicker.css'
 import { PreviewFicha } from './preview-ficha'
-
-
+import { T, SERIF, MONO, inputBase } from '@/lib/civic'
+import { I, LogoUAIGobLab } from '@/components/civic-icons'
+import { FeedbackPill } from '@/components/FeedbackPill'
+import { QuestionFeedback, FlaggedLabel, type FlagState } from '@/components/QuestionFeedback'
+import { SatisfactionSurvey } from '@/components/SatisfactionSurvey'
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-//import { ScrollArea } from "@/components/ui/scroll-area"
-//import { Separator } from "@/components/ui/separator"
-import Image from 'next/image'
-//import Link from 'next/link'
-import { InfoSidebar } from '@/components/InfoSidebar'
+  sections,
+  isAnswered,
+  visibleQuestions,
+  sectionProgress,
+  isSectionComplete,
+  type Question,
+  type Answers,
+} from '@/data/sections'
 import {
-  trackToolStart,
   trackSectionComplete,
   trackToolComplete,
   trackToolExport,
-  registerToolUser,
 } from '@/lib/analytics'
 
-interface Question {
-  id: string;
-  text: string;
-  type: 'text' | 'textarea' | 'radio' | 'slider' | 'date';
-  options?: string[];
-  isRequired: boolean;
-  tooltip: string;
-  min?: number;
-  max?: number;
-  step?: number;
-  dependsOn?: {
-    questionId: string;
-    value: string | number;
-  };
-  placeholder?: string;
-}
-
-interface Section {
-  id: string;
-  title: string;
-  questions: Question[];
-}
-
-const sections: Section[] = [
-  {
-    id: 'Visión General',
-    title: 'Visión General',
-    questions: [
-      {
-        id: 'nombreModelo1',
-        text: 'Nombre del SDA (Sistema de Decisiones Automatizado)',
-        type: 'text',
-        isRequired: true,
-        tooltip: 'Nombre identificatorio del sistema de decisiones automatizado (modelo, algoritmo o herramienta)',
-        placeholder: 'Modelo PrioriSalud para priorización de pacientes (caso ejemplo ficticio)'
-      },
-      {
-        id: 'tipoModelo2',
-        text: '¿Qué tipo de SDA es?',
-        type: 'textarea',
-        isRequired: true,
-        tooltip: 'Indica si el SDA es un modelo predictivo, sistema de recomendación, clasificación, etc, y cuál es su arquitectura.',
-        placeholder: 'Modelo de clasificación supervisada.'
-      },
-      {
-        id: 'propositoModelo3',
-        text: 'Describa el propósito del proyecto y funcionalidad del SDA dentro de él',
-        type: 'textarea',
-        isRequired: true,
-        tooltip: 'Explica el objetivo general del proyecto y cómo el SDA contribuye a lograrlo.',
-        placeholder: 'El proyecto busca mejorar los tiempos de atención en listas de espera. El SDA clasifica a los pacientes en tres niveles de prioridad (alta, media y baja) para facilitar su asignación a especialistas.'
-      },
-      {
-        id: 'porqueModeloTA4',
-        text: '¿Por qué se decidió utilizar este SDA en lugar de otro tipo de solución no algorítmica?',
-        type: 'textarea',
-        isRequired: false,
-        tooltip: 'Justifica la elección de una solución algorítmica frente a otras alternativas posibles, como reglas manuales.',
-        placeholder: 'La priorización previa era manual, heterogénea y dependía del criterio de cada centro de salud. El SDA permite mayor consistencia, trazabilidad y eficiencia en la asignación de prioridades.'
-      },
-      {
-        id: 'alcanzarResultadosTA5',
-        text: '¿Qué tarea(s) realiza el SDA para lograr alcanzar los resultados del proyecto? ',
-        type: 'textarea',
-        isRequired: false,
-        tooltip: 'Describe la acción específica que realiza el SDA (por ejemplo: predecir, clasificar, priorizar).',
-        placeholder: 'Clasifica automáticamente a los pacientes ingresados en listas de espera en una categoría de prioridad.'
-      },
-      {
-        id: 'usoPrevistoModelo6',
-        text: '¿Cuál es el uso previsto del SDA?',
-        type: 'textarea',
-        isRequired: true,
-        tooltip: 'Indica en qué contexto y para qué fin se diseñó el uso del SDA.',
-        placeholder: 'Asignar prioridades en las listas de espera de atención médica especializada dentro del sistema público de salud.'
-      },
-      {
-        id: 'usoPrevistoModelo6y1',
-        text: '¿Qué resultado puede esperar el usuario directo del SDA?',
-        type: 'textarea',
-        isRequired: true,
-        tooltip: 'Especifica cuál es la salida o respuesta esperada por parte de quien interactúa directamente con el SDA, siendo esta la persona afectada por las decisiones del sistema, persona que interactura directamente con el sistema y se ve afectada (para bien o para mal) por las decisiones de este ',
-        placeholder: 'El profesional de salud recibe una categoría sugerida de prioridad para cada paciente, que puede revisar y confirmar.'
-      },
-      {
-        id: 'usosNocontextModelo7',
-        text: '¿Qué usos están fuera del alcance del SDA?',
-        type: 'textarea',
-        isRequired: false,
-        tooltip: 'Detalla usos no permitidos o no contemplados originalmente en el diseño del SDA.',
-        placeholder: 'No debe usarse para tomar decisiones clínicas ni para rechazar la atención a ningún paciente.'
-      }
-      /*{
-        id: 'proyectoExistente',
-        text: '1.5. Nombre del proyecto existente',
-        type: 'text',
-        isRequired: true,
-        tooltip: 'Ingrese el nombre del proyecto existente que se está ampliando',
-        dependsOn: {
-          questionId: 'esAmpliacion',
-          value: 'Sí'
-        }
-      },
-      {
-        id: 'fechaImplementacion',
-        text: '1.6. Fecha estimada de implementación',
-        type: 'text',
-        isRequired: true,
-        tooltip: 'Ingrese la fecha estimada en que el proyecto será implementado (formato: DD/MM/AAAA)'
-      }*/
-    ],
-  },
-  {
-    id: 'Detalles del modelo',
-    title: 'Detalles del modelo',
-    questions: [
-      {
-        id: 'desarrolladorModelo8',
-        text: 'Nombre de la organización responsable del SDA',
-        type: 'textarea',
-        isRequired: true,
-        tooltip: 'Entidad o institución que lidera el desarrollo, gestión o implementación del SDA. Si la institución que desarrolla el SDA y la institución que lo implementa son diferentes, indique la institución que lo implementa (institución que lo usa)',
-        placeholder: "Departamento de Gestión de la Demanda - Hospital SDA"
-      },
-      {
-        id: 'versionModelo9',
-        text: '¿En qué versión se encuentra el SDA? ',
-        type: 'text',
-        isRequired: false,
-        tooltip: 'Indica el número o identificador de la versión actual del SDA. \n Formato esperado: Número-versión',
-        placeholder: '1.3 2024/11 o 1.3.0',
-      },
-      {
-        id: 'fechaModelo10',
-        text: 'Fecha de implementación del SDA',
-        type: 'text',
-        isRequired: true,
-        tooltip: 'Fecha en que el SDA comenzó a ser utilizado operacionalmente. en formato AAAA/MM',
-        placeholder: '2024/11',
-      },
-      {
-        id: 'linkModelo11',
-        text: 'Recursos para obtener más información del proyecto',
-        type: 'text',
-        isRequired: true,
-        tooltip: 'Enlaces, documentos o contactos para ampliar la información sobre el SDA y su uso.',
-        placeholder: 'http://www.salud.gob.cl/priorisalud',
-        /*dependsOn: {
-          questionId: 'nivelImpacto',
-          value: 75
-        }*/
-      },
-      {
-        id: 'citaModelo12',
-        text: '¿Cómo citar o hacer referencia formal a este SDA?',
-        type: 'textarea',
-        isRequired: true,
-        tooltip: 'Formato sugerido: Nombre institución (Año). Nombre sistema. Enlace. ',
-        placeholder: 'Hospital SDA (2024). PrioriSalud – Sistema de Prioridad Algorítmica para Listas de Espera. www.salud.gob.cl/priorisalud'
-      },
-      {
-        id: 'licenciaModelo13',
-        text: '¿Qué tipo de licencia tiene el SDA?',
-        type: 'text',
-        isRequired: true,
-        tooltip: 'Tipo de licencia legal que regula el uso del SDA (por ejemplo: software libre, licencia propietaria, No Aplica, etc.).',
-        placeholder: 'Licencia pública de uso institucional.'
-      },
-      /*{
-        id: 'contactoModelo14',
-        text: '¿Hay algún canal de reclamos o sugerencias mediante los cuales las personas puedan solicitar más información?',
-        type: 'textarea',
-        isRequired: false,
-        tooltip: '',
-        placeholder: ''
-      },*/
-    ],
-  },
-  {
-    id: 'Categorización o elaboración de perfiles',
-    title: 'Categorización o elaboración de perfiles',
-    questions: [
-      {
-        id: 'classModeloTA15',
-        text: '¿El SDA categoriza, clasifica o elabora perfiles o etiquetas de individuos?',
-        type: 'radio',
-        options: ['Sí', 'No'],
-        isRequired: true,
-        tooltip: 'Indica si el SDA asigna etiquetas o perfiles a personas, como "aprobado", "alto riesgo", "prioritario", etc.'
-      },
-      {
-        id: 'classModelocategoriasTA16',
-        text: '¿Cuáles son esos perfiles o categorías? Describa brevemente cada uno.',
-        type: 'textarea',
-        isRequired: true,
-        tooltip: 'Lista y explica el significado de cada categoría o perfil que el SDA asigna.',
-        placeholder: 'Alta prioridad: riesgo alto para la salud si no recibe atención en corto plazo. Media: condición estable pero requiere seguimiento. Baja: casos sin urgencia.',
-        dependsOn: {
-          questionId: 'classModeloTA15',
-          value: 'Sí'
-        }
-      },
-      {
-        id: 'classModelocategoriasTA16y1',
-        text: 'Indique el motivo o fundamento en virtud de los que la categoría es relevante para que el SDA alcance sus resultados',
-        type: 'textarea',
-        isRequired: false,
-        tooltip: 'Explica por qué esas categorías ayudan a cumplir con el propósito del SDA.',
-        placeholder: 'La categoría determina el orden en que se otorgan las horas médicas, lo que permite gestionar mejor los recursos limitados.',
-        dependsOn: {
-          questionId: 'classModeloTA15',
-          value: 'Sí'
-        }
-      },
-      {
-        id: 'classModelocategoriasTA16y2',
-        text: 'Indique la metodología que utiliza el SDA para asignar las categorías.',
-        type: 'textarea',
-        isRequired: false,
-        tooltip: 'Describe el procedimiento técnico o lógico para categorizar (modelo estadístico, reglas, umbrales, etc.).',
-        placeholder: 'Modelo de clasificación entrenado con datos históricos, utilizando Random Forest y calibrado con validación cruzada.',
-        dependsOn: {
-          questionId: 'classModeloTA15',
-          value: 'Sí'
-        }
-      },
-      {
-        id: 'classModelocategoriasTA16y3',
-        text: 'Indique el efecto de las variables en la asignación de categorías. ',
-        type: 'textarea',
-        isRequired: false,
-        tooltip: '¿Qué variables son relevantes para esta asignación de categorías?',
-        placeholder: 'La variable más influyente es el tipo de diagnóstico, seguida por edad del paciente, historial médico y situación socioeconómica.',
-        dependsOn: {
-          questionId: 'classModeloTA15',
-          value: 'Sí'
-        }
-      },
-      {
-        id: 'classModelometodologiaTA17',
-        text: 'Consecuencias previstas que el uso de datos personales en el contexto del SDA puede tener en el titular de datos ',
-        type: 'textarea',
-        isRequired: false,
-        tooltip: '',
-        placeholder: 'La categorización podría influir en los tiempos de espera, generando impactos en el acceso a la salud.',
-        dependsOn: {
-          questionId: 'classModeloTA15',
-          value: 'Sí'
-        }
-      },
-      
-      {
-        id: 'classModelorelevanciaTA19',
-        text: '¿Por qué la categoría, perfil o prioridad es relevante para que el modelo alcance sus resultados?',
-        type: 'textarea',
-        isRequired: false,
-        tooltip: '',
-        dependsOn: {
-          questionId: 'classModeloTA15',
-          value: 'Sí'
-        }
-
-      },
-    ],
-  },
-  {
-    id: 'Métricas de desempeño',
-    title: 'Métricas de desempeño',
-    questions: [
-      {
-        id: 'metricasModelo20',
-        text: '¿Qué métricas se utilizan para medir el desempeño del SDA?',
-        type: 'textarea',
-        isRequired: true,
-        tooltip: 'Indica las métricas de evaluación utilizadas, como precisión, recall, AUC, etc.',
-        placeholder: 'Exactitud, recall para la clase “alta prioridad” y matriz de confusión.'
-      },
-      {
-        id: 'umbralDecisionModelo21',
-        text: '¿A partir de que valor se considera que se obtiene un buen desempeño? Contestar para cada métrica establecida',
-        type: 'textarea',
-        isRequired: false,
-        tooltip: 'Define el umbral o rango aceptable de cada métrica para considerar que el SDA funciona bien.',
-        placeholder: 'Recall superior a 0.80 para alta prioridad y exactitud total mayor a 0.85.'
-      },
-      {
-        id: 'umbralDecisionModelo21y1',
-        text: '¿Qué valor se obtuvo en la medición de dicha métrica? Contestar para cada métrica',
-        type: 'textarea',
-        isRequired: false,
-        tooltip: 'Indica el resultado real obtenido por el SDA en cada métrica.',
-        placeholder: 'Recall: 0.83, Exactitud: 0.87'
-      },
-
-      {
-        id: 'caluloMedicionesModelos22',
-        text: '¿Por qué se decide usar estas métricas frente a otras? ',
-        type: 'textarea',
-        isRequired: false,
-        tooltip: 'Justifica la elección de métricas específicas en lugar de otras posibles.',
-        placeholder: 'El recall en “alta prioridad” es crítico para no dejar fuera a pacientes con mayor necesidad.'
-      },
-    ],
-  },
-  {
-    id: 'Datos de entrenamiento',
-    title: 'Datos de entrenamiento',
-    questions: [
-      {
-        id: 'datosModelo23',
-        text: '¿Qué datos se utilizaron para el entrenamiento del SDA?',
-        type: 'textarea',
-        isRequired: true,
-        tooltip: 'Identifica el conjunto de datos utilizado en la etapa de entrenamiento (fuente, variables relevantes, periodo, tamaño, etc.).',
-        placeholder: 'Un subconjunto de pacientes con diagnóstico validado y decisión médica histórica, de los últimos 2 años. Se utilizó el 80% para entrenamiento.'
-      },
-      {
-        id: 'ProcesamientoModelo24',
-        text: 'Indique los pasos de preprocesamiento aplicados a los datos',
-        type: 'textarea',
-        isRequired: true,
-        tooltip: 'Describe las transformaciones aplicadas antes de entrenar o evaluar el modelo (limpieza, normalización, etc.).',
-        placeholder: 'Por ejemplo, Imputación de valores faltantes, normalización de variables numéricas, codificación de variables categóricas.'
-      },
-      {
-        id: 'ProcesamientoModelo24y1',
-        text: '¿Por qué se decidió usar estos datos para el SDA?',
-        type: 'textarea',
-        isRequired: true,
-        tooltip: 'Explica los criterios de selección de los datos usados (disponibilidad, calidad, representatividad).',
-        placeholder: 'Eran los únicos datos clínicos disponibles a nivel nacional y representaban adecuadamente a la población objetivo.',
-      },
-    ],
-  },
-  {
-    id: 'Datos de evaluación',
-    title: 'Datos de evaluación',
-    questions: [
-      {
-        id: 'conjuntosEvalModelo25',
-        text: '¿Qué datos se utilizaron para evaluar el SDA?',
-        type: 'textarea',
-        isRequired: true,
-        tooltip: 'Identifica el conjunto de datos utilizado en la etapa de evaluación (fuente, variables relevantes, periodo, tamaño, etc.).',
-        placeholder: 'Un subconjunto de pacientes con diagnóstico validado y decisión médica histórica, de los últimos 2 años. Se utilizó el 20% para evaluación. '
-      },
-      {
-        id: 'preprocesamientoEvaluacionModelo27',
-        text: 'Indique los pasos de preprocesamiento aplicados a los datos',
-        type: 'textarea',
-        isRequired: false,
-        tooltip: 'Describe las transformaciones aplicadas antes de entrenar o evaluar el modelo (limpieza, normalización, etc.).',
-        placeholder: 'Imputación de valores faltantes, normalización de variables numéricas, codificación de variables categóricas.'
-      },
-    ],
-  },
-  {
-    id: 'Consideraciones éticas',
-    title: 'Consideraciones éticas',
-    questions: [
-      {
-        id: 'modeloCategoriza30',
-        text: '¿El SDA categoriza o perfila a las personas?',
-        type: 'radio',
-        options: ['Sí', 'No', 'No aplica'],
-        isRequired: true,
-        tooltip: 'Confirma si el modelo genera perfiles o categorías individuales que pueden afectar decisiones.'
-      },
-      {
-        id: 'razonesdecisionNegativapersonas31',
-        text: '¿Qué circunstancias o factores llevan a plasmar, en el acto administrativo, una decisión negativa respecto de la persona?',
-        type: 'textarea',
-        isRequired: false,
-        tooltip: 'Describe cómo se relacionan los perfiles del SDA con decisiones desfavorables para las personas.',
-        placeholder: 'La asignación de “baja prioridad” puede significar una espera prolongada para la atención médica.',
-        dependsOn: {
-          questionId: '30_modeloCategoriza',
-          value: 'Sí'
-        }
-      },
-      {
-        id: 'datosPersonalesTA32',
-        text: '¿El SDA utiliza datos personales?',
-        type: 'radio',
-        options: ['Sí', 'No'],
-        isRequired: true,
-        tooltip: 'Confirma si el SDA procesa información que permite identificar directa o indirectamente a las personas.'
-      },
-      {
-        id: 'cualesdatosPersonales321',
-        text: 'En caso de que sí se usen datos personales, indicar cuáles',
-        type: 'textarea',
-        isRequired: false,
-        tooltip: 'Lista los tipos de datos personales utilizados (ej. nombre, edad, dirección, etc.).',
-        placeholder: 'Edad, dirección, diagnóstico médico, historial de hospitalizaciones.',
-        dependsOn: {
-          questionId: 'datosPersonalesTA32',
-          value: 'Sí'
-        }
-      },
-      {
-        id: 'datoSensible33',
-        text: '¿El SDA utiliza datos sensibles?',
-        type: 'radio',
-        options: ['Sí', 'No'],
-        isRequired: true,
-        tooltip: 'Confirma si el SDA utiliza información considerada sensible según la normativa (ej. salud, datos biométricos).'
-      },
-      {
-        id: 'tipoDatoSensible331',
-        text: 'En caso de que sí se usen datos sensibles, indicar cuáles',
-        type: 'textarea',
-        isRequired: false,
-        tooltip: 'Lista los tipos de datos sensibles utilizados.',
-        placeholder: 'Diagnósticos médicos y condiciones de salud.',
-        dependsOn: {
-          questionId: 'datoSensible33',
-          value: 'Sí'
-        }
-      },
-      {
-        id: 'asuntosCentralesModelo34',
-        text: '¿El SDA apoya o reemplaza la toma de decisiones sobre aspectos fundamentales de la vida de las personas? Por ejemplo, en ámbitos como educación, seguridad, salud, entre otros.',
-        type: 'radio',
-        options: ['Sí', 'No'],
-        isRequired: true,
-        tooltip: 'Indica si el SDA incide directamente en decisiones críticas como acceso a salud, educación, beneficios, trabajo, etc.'
-      },
-      {
-        id: 'tipoAsuntosCentralesModelo341',
-        text: 'En caso de que sí, ¿en qué ámbito?',
-        type: 'textarea',
-        isRequired: false,
-        tooltip: 'Describe en qué área afecta directamente las decisiones críticas, como acceso a salud, educación, beneficios, trabajo, etc.',
-        placeholder: 'Acceso a servicios de salud.',
-        dependsOn: {
-          questionId: 'asuntosCentralesModelo34',
-          value: 'Sí'
-        }
-      },
-      {
-        id: 'riesgoUsoModelo36',
-        text: 'Describe los posibles riesgos éticos identificados en relación a la implementación del proyecto',
-        type: 'textarea',
-        isRequired: false,
-        tooltip: 'Expone los principales problemas éticos detectados (sesgos, opacidad, exclusión, impacto social, medioambiental, etc.).',
-        placeholder: 'Sesgo contra personas mayores o con menos historial clínico en el sistema. Discriminación indirecta por nivel educacional.'
-      },
-      {
-        id: 'casosUsoconocidos37',
-        text: '¿Se conocen casos de uso particulares que sean problemáticos para la institución, sus usuarios o las personas afectadas por el SDA? Descríbelos y explica cómo se abordan esos casos',
-        type: 'textarea',
-        isRequired: false,
-        tooltip: 'Relata ejemplos donde el uso del SDA haya generado dudas, conflictos o efectos no deseados.',
-        placeholder: 'En zonas rurales con mala calidad de datos, el SDA ha clasificado erróneamente a pacientes. Se estableció un protocolo de revisión manual en estos casos.'
-      },
-      {
-        id: 'estrategiasMitigacionModelo35',
-        text: '¿Qué medidas y acciones se realizaron para mitigar posibles riesgos éticos?', 
-        type: 'textarea',
-        isRequired: true,
-        tooltip: 'Describe acciones tomadas para reducir riesgos como sesgos, discriminación o falta de transparencia.',
-        placeholder: 'Se implementó una revisión médica posterior obligatoria, y se entrena el modelo con criterios de equidad.'
-      },
-      {
-        id: 'otraConsideracion38',
-        text: 'De existir alguna otra consideración ética adicional que se haya tenido en cuenta durante el desarrollo y operacionalización del SDA, indicar en este apartado.',
-        type: 'textarea',
-        isRequired: false,
-        tooltip: 'Espacio libre para incluir otros elementos éticos relevantes no cubiertos en las preguntas anteriores.',
-        placeholder: 'Se consultó a una mesa de bioética y a representantes de organizaciones de pacientes en la fase de diseño.'
-      },
-
-    ],
-  },
-  {
-    id: 'Advertencias y recomendaciones',
-    title: 'Advertencias y recomendaciones',
-    questions: [
-      {
-        id: 'pruebaAdicional39',
-        text: '¿Los resultados de implementación del SDA sugieren alguna prueba adicional? Descríbelas.',
-        type: 'textarea',
-        isRequired: false,
-        tooltip: 'Indica si es necesario realizar más validaciones o monitoreos para mejorar el desempeño o confianza.',
-        placeholder: 'Sí, se están planificando pruebas A/B para comparar su desempeño con la priorización tradicional.'
-
-      },
-      
-      {
-        id: 'recomendacionesAdicionales41',
-        text: '¿Existen recomendaciones adicionales para el uso del SDA en el proyecto?',
-        type: 'textarea',
-        isRequired: false,
-        tooltip: 'Entrega sugerencias para mejorar o ajustar el uso del SDA durante su uso o en el futuro.',
-        placeholder: "Utilizarlo como apoyo, pero nunca como única fuente de decisión. Mantener revisión médica obligatoria."
-      },
-      {
-        id: 'caracteristicasIdeales42',
-        text: '¿Cuáles son las características ideales de un conjunto de datos para este SDA?',
-        type: 'textarea',
-        isRequired: true,
-        tooltip: 'Define los atributos deseables en los datos para que el SDA funcione de forma óptima.',
-        placeholder: 'Cobertura nacional, datos clínicos actualizados, buena calidad en registros y variables sociales complementarias.',
-
-      },
-      {
-        id: 'grupoRelevante40',
-        text: '¿Existe algún grupo relevante que no está representado en el conjunto de datos utilizado en el SDA? Si es así, descríbalo.',
-        type: 'textarea',
-        isRequired: false,
-        tooltip: 'Indique el estado actual del cumplimiento normativo del proyecto',
-        placeholder: 'La población migrante reciente no está suficientemente representada en los datos históricos.'      
-      },
-    ],
-  },
-  {
-    id: 'Reclamación',
-    title: 'Reclamación',
-    questions: [
-      {
-        id: 'reclamacionTA43',
-        text: '¿Existe una vía de reclamación a la que las personas puedan acceder para obetener más información del SDA o hacer llegar reclamos por sus decisiones?',
-        type: 'radio',
-        options: ['Sí', 'No'],
-        isRequired: true,
-        tooltip: 'Indica si las personas afectadas por el SDA pueden reclamar o solicitar información sobre sus decisiones.'
-      },
-      {
-        id: 'viaReclamacionTA44',
-        text: '¿Cuál es la forma de acceder a la vía de reclamación?',
-        type: 'textarea',
-        isRequired: true,
-        tooltip: 'Describe los canales de acceso disponibles para interponer reclamos (web, correo, formulario, presencial etc.).',
-        placeholder:'A través del sitio web del Hospital SDA (www.salud.gob.cl/priorisalud) o en oficinas de atención ciudadana.',
-        dependsOn: {
-          questionId: 'reclamacionTA43',
-          value: 'Sí'
-        }
-      },
-      
-    ],
-  }
-];
-
 function TransparencyTool() {
-  const [activeSection, setActiveSection] = useState('Visión General')
+  const [activeSection, setActiveSection] = useState(sections[0].id)
   const { toast } = useToast()
-  const [formData, setFormData] = useState<Record<string, any>>({})
+  const [formData, setFormData] = useState<Answers>({})
   const [isAllRequiredAnswered, setIsAllRequiredAnswered] = useState(false)
-  const [isLastSection, setIsLastSection] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-  const [feedback, setFeedback] = useState('')
-  const [organization, setOrganization] = useState('')
-  const [expandedTooltip, setExpandedTooltip] = useState<string | null>(null);
+  const [expandedTooltip, setExpandedTooltip] = useState<string | null>(null)
+  const [flags, setFlags] = useState<Record<string, FlagState | undefined>>({})
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+
+  // Encuesta de satisfacción: se pide una sola vez, en el primer intento de
+  // abrir la vista previa. Nunca bloquea — omitirla también abre la ficha.
+  const [surveySent, setSurveySent] = useState(false)
+  const [surveyModal, setSurveyModal] = useState(false)
+
+  // Alto real de la barra fija, para reservar espacio bajo las preguntas.
+  const navbarRef = useRef<HTMLDivElement>(null)
+  const [navH, setNavH] = useState(64)
 
   useEffect(() => {
-    const userEmail = localStorage.getItem('userEmail')
-    const savedAnswers = localStorage.getItem(`answers_${userEmail}`)
+    const email = localStorage.getItem('userEmail')
+    setUserEmail(email)
+    if (email && localStorage.getItem(`surveySent_${email}`)) setSurveySent(true)
+
+    const savedAnswers = localStorage.getItem(`answers_${email}`)
     if (savedAnswers) {
       const parsedAnswers = JSON.parse(savedAnswers)
       setFormData(parsedAnswers)
 
-      // Encuentra la última sección con respuestas
+      // Retomar en la última sección con respuestas.
       const lastAnsweredSection = sections.reduce((last, section) => {
         const hasAnswers = section.questions.some(q => parsedAnswers[q.id])
         return hasAnswers ? section : last
       }, sections[0])
-
       setActiveSection(lastAnsweredSection.id)
-    } else {
-      // Primera visita: registrar inicio de herramienta
-      trackToolStart()
-      if (userEmail) registerToolUser(userEmail)
     }
   }, [])
 
-
   useEffect(() => {
-    checkRequiredQuestions()
-    setIsLastSection(activeSection === sections[sections.length - 1].id)
-  }, [formData, activeSection])
+    if (!navbarRef.current) return
+    const medir = () => setNavH(navbarRef.current?.offsetHeight ?? 64)
+    medir()
+    const ro = new ResizeObserver(medir)
+    ro.observe(navbarRef.current)
+    return () => ro.disconnect()
+  }, [])
 
+  /* ── Lógica de respuestas ─────────────────────────────────────── */
+
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
   const handleInputChange = (questionId: string, value: any) => {
-    const newFormData = {
-      ...formData,
-      [questionId]: value
-    }
+    const newFormData = { ...formData, [questionId]: value }
     setFormData(newFormData)
 
-    // Save answers to localStorage
-    const userEmail = localStorage.getItem('userEmail')
-    if (userEmail) {
-      localStorage.setItem(`answers_${userEmail}`, JSON.stringify(newFormData))
+    const email = localStorage.getItem('userEmail')
+    if (email) {
+      localStorage.setItem(`answers_${email}`, JSON.stringify(newFormData))
     }
   }
 
-  const checkRequiredQuestions = () => {
+  /** Marca o desmarca una alternativa de un multiselect. */
+  const toggleOption = (questionId: string, option: string) => {
+    const actuales: string[] = formData[questionId] || []
+    handleInputChange(
+      questionId,
+      actuales.includes(option) ? actuales.filter(o => o !== option) : [...actuales, option]
+    )
+  }
+
+  useEffect(() => {
     const allAnswered = sections.every(section =>
-      section.questions.every(question => {
-        if (!question.isRequired) return true
-        if (question.dependsOn) {
-          const dependentValue = formData[question.dependsOn.questionId]
-          if (question.dependsOn.value === dependentValue) {
-            return formData[question.id] && formData[question.id].length > 0
-          }
-          return true
-        }
-        return formData[question.id] && formData[question.id].length > 0
-      })
+      visibleQuestions(section, formData).every(q => !q.isRequired || isAnswered(q, formData))
     )
     setIsAllRequiredAnswered(allAnswered)
+  }, [formData])
+
+  const allVisible = sections.flatMap(s => visibleQuestions(s, formData))
+  const progress = allVisible.length
+    ? (allVisible.filter(q => isAnswered(q, formData)).length / allVisible.length) * 100
+    : 0
+
+  const sectionIndex = sections.findIndex(s => s.id === activeSection)
+  const currentSection = sections[sectionIndex]
+  const visibleInSection = visibleQuestions(currentSection, formData)
+  const isLastSection = sectionIndex === sections.length - 1
+
+  const handleNextSection = () => {
+    if (sectionIndex < sections.length - 1) {
+      trackSectionComplete(activeSection, sectionIndex, sections.length)
+      setActiveSection(sections[sectionIndex + 1].id)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
+  const handlePreviousSection = () => {
+    if (sectionIndex > 0) {
+      setActiveSection(sections[sectionIndex - 1].id)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
   }
 
   const handleSaveResponses = () => {
-    
     toast({
       title: "Respuestas guardadas",
-      description: "Tus respuestas han sido guardadas exitosamente.",
+      description: "Tus respuestas quedan guardadas en este navegador junto a tu correo.",
     })
   }
 
-  const handleNextSection = () => {
-    const currentIndex = sections.findIndex(section => section.id === activeSection)
-    if (currentIndex < sections.length - 1) {
-      trackSectionComplete(activeSection, currentIndex, sections.length)
-      setActiveSection(sections[currentIndex + 1].id)
-    }
-  }
-
-  const shouldShowQuestion = (question: Question) => {
-    if (!question.dependsOn) return true
-    const dependentValue = formData[question.dependsOn.questionId]
-    if (question.type === 'slider') {
-      return dependentValue >= question.dependsOn.value
-    }
-    return dependentValue === question.dependsOn.value
-  }
-
-
+  /**
+   * Abre la vista previa. La primera vez intercepta el clic para pedir la
+   * encuesta de satisfacción; una vez respondida (u omitida), abre directo.
+   */
   const handleOpenPreview = () => {
-    if (isAllRequiredAnswered) {
-      trackToolComplete()
-      trackToolExport('pdf')
-      setShowPreview(true)
-    } else {
+    if (!isAllRequiredAnswered) {
       toast({
-        title: "Error",
-        description: "Por favor, completa todas las preguntas obligatorias antes de generar la vista previa.",
+        title: "Faltan preguntas obligatorias",
+        description: "Completa todas las preguntas marcadas con * antes de generar la ficha.",
         variant: "destructive",
       })
+      return
     }
+    if (!surveySent) {
+      setSurveyModal(true)
+      return
+    }
+    abrirPreview()
   }
 
-  const renderQuestion = (question: Question, sectionIndex: number, questionIndex: number) => {
-    if (!shouldShowQuestion(question)) return null
+  const abrirPreview = () => {
+    trackToolComplete()
+    trackToolExport('pdf')
+    setShowPreview(true)
+  }
 
-    const questionNumber = `${sectionIndex + 1}.${questionIndex + 1}`
+  const marcarEncuestaEnviada = () => {
+    setSurveySent(true)
+    if (userEmail) localStorage.setItem(`surveySent_${userEmail}`, '1')
+  }
 
+  const cerrarEncuestaYAbrir = () => {
+    setSurveyModal(false)
+    // Pequeño respiro para que el modal se desmonte antes de abrir la ficha.
+    setTimeout(abrirPreview, 150)
+  }
+
+  const handleFlag = (questionId: string, state: FlagState | undefined) => {
+    setFlags(prev => ({ ...prev, [questionId]: state }))
+  }
+
+  /* ── Estilos compartidos ──────────────────────────────────────── */
+
+  const focusOn = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    e.target.style.borderColor = T.burgundy
+    e.target.style.boxShadow = '0 0 0 3px rgba(122,59,72,.1)'
+  }
+  const focusOff = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    e.target.style.borderColor = T.roseLight
+    e.target.style.boxShadow = 'none'
+  }
+
+  const ghostBtn: React.CSSProperties = {
+    padding: '8px 14px', border: `1px solid ${T.roseLight}`, borderRadius: 9,
+    fontSize: 13, color: T.ink80, background: '#fff', cursor: 'pointer',
+    fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 7,
+  }
+  const solidBtn: React.CSSProperties = {
+    padding: '10px 20px', background: T.burgundy, color: '#fff', border: 'none',
+    borderRadius: 9, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+    fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', gap: 8,
+  }
+
+  /* ── Campos ───────────────────────────────────────────────────── */
+
+  const renderQuestionInput = (question: Question) => {
     switch (question.type) {
       case 'text':
         return (
-          <Input
+          <input
+            type="text"
             id={question.id}
             value={formData[question.id] || ''}
-            onChange={(e) => handleInputChange(question.id, e.target.value)}
+            onChange={e => handleInputChange(question.id, e.target.value)}
             placeholder={question.placeholder}
+            style={inputBase}
+            onFocus={focusOn}
+            onBlur={focusOff}
           />
         )
       case 'textarea':
         return (
-          <Textarea
+          <textarea
             id={question.id}
             value={formData[question.id] || ''}
-            onChange={(e) => handleInputChange(question.id, e.target.value)}
+            onChange={e => handleInputChange(question.id, e.target.value)}
+            rows={4}
             placeholder={question.placeholder}
+            style={{ ...inputBase, resize: 'vertical', lineHeight: 1.6, minHeight: 100 }}
+            onFocus={focusOn}
+            onBlur={focusOff}
           />
         )
       case 'radio':
         return (
-          <RadioGroup
-            value={formData[question.id] || ''}
-            onValueChange={(value) => handleInputChange(question.id, value)}
-          >
-            {question.options?.map((option) => (
-              <div key={option} className="flex items-center space-x-2">
-                <RadioGroupItem value={option} id={`${question.id}-${option}`} />
-                <Label htmlFor={`${question.id}-${option}`}>{option}</Label>
-              </div>
-            ))}
-          </RadioGroup>
+          <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+            {question.options?.map(option => {
+              const selected = formData[question.id] === option
+              return (
+                <label key={option} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14, color: T.ink }}>
+                  <input
+                    type="radio"
+                    name={question.id}
+                    checked={selected}
+                    onChange={() => handleInputChange(question.id, option)}
+                    style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
+                  />
+                  <span aria-hidden style={{
+                    width: 18, height: 18, borderRadius: 99, flexShrink: 0,
+                    border: `1.5px solid ${selected ? T.burgundy : T.ink40}`,
+                    background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all .15s',
+                  }}>
+                    {selected && <span style={{ width: 8, height: 8, borderRadius: 99, background: T.burgundy }} />}
+                  </span>
+                  {option}
+                </label>
+              )
+            })}
+          </div>
         )
+      // Alternativas largas (causales legales, art. 14 ter): una lista vertical de
+      // tarjetas se lee bastante mejor que un <select> nativo, donde los textos de
+      // varias líneas quedan truncados.
+      case 'select':
+      case 'multiselect': {
+        const multiple = question.type === 'multiselect'
+        const marcadas: string[] = multiple ? (formData[question.id] || []) : []
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {question.options?.map(option => {
+              const checked = multiple ? marcadas.includes(option) : formData[question.id] === option
+              return (
+                <label
+                  key={option}
+                  style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer',
+                    padding: '10px 13px', borderRadius: 9,
+                    border: `1.5px solid ${checked ? T.burgundy : T.roseLight}`,
+                    background: checked ? T.rosePaper : '#fff', transition: 'all .15s',
+                  }}
+                >
+                  <input
+                    type={multiple ? 'checkbox' : 'radio'}
+                    name={question.id}
+                    checked={checked}
+                    onChange={() => multiple
+                      ? toggleOption(question.id, option)
+                      : handleInputChange(question.id, option)}
+                    style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
+                  />
+                  <span aria-hidden style={{
+                    width: 17, height: 17, borderRadius: multiple ? 4 : 99, flexShrink: 0, marginTop: 2,
+                    border: `1.5px solid ${checked ? T.burgundy : T.ink40}`,
+                    background: checked && multiple ? T.burgundy : '#fff', color: '#fff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .15s',
+                  }}>
+                    {checked && (multiple
+                      ? <I.check width={10} height={10} />
+                      : <span style={{ width: 8, height: 8, borderRadius: 99, background: T.burgundy }} />)}
+                  </span>
+                  <span style={{ fontSize: 13, lineHeight: 1.5, color: checked ? T.ink : T.ink80 }}>{option}</span>
+                </label>
+              )
+            })}
+          </div>
+        )
+      }
       case 'slider':
         return (
-          <div className="space-y-4">
-            <Slider
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <input
+              type="range"
               id={question.id}
               min={question.min}
               max={question.max}
               step={question.step}
-              value={[formData[question.id] || 0]}
-              onValueChange={(value) => handleInputChange(question.id, value[0])}
+              value={formData[question.id] ?? question.min ?? 0}
+              onChange={e => handleInputChange(question.id, Number(e.target.value))}
+              style={{ width: '100%', accentColor: T.burgundy }}
             />
-            <div className="flex justify-between text-sm text-gray-500">
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: T.ink60, fontFamily: MONO }}>
               <span>{question.min}</span>
-              <span>{formData[question.id] || 0}</span>
+              <span style={{ color: T.burgundy, fontWeight: 700 }}>{formData[question.id] ?? question.min ?? 0}</span>
               <span>{question.max}</span>
             </div>
           </div>
@@ -756,172 +343,288 @@ function TransparencyTool() {
         return null
     }
   }
+
+  /* ── Render ───────────────────────────────────────────────────── */
+
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <InfoSidebar
-        isSidebarOpen={isSidebarOpen}
-        setIsSidebarOpen={setIsSidebarOpen}
-        feedback={feedback}
-        setFeedback={setFeedback}
-        organization={organization}
-        setOrganization={setOrganization}
-      />
+    <div style={{ background: T.paper, minHeight: '100vh', color: T.ink, display: 'flex', flexDirection: 'column' }}>
 
-      <div className="flex-1">
-
-      <div className="flex justify-between items-center p-4 rounded-lg backdrop-blur-sm">
-        {/* Elemento Izquierdo */}
-        <div className="flex items-center space-x-2">
-          <Image
-            src="/images/logo-goblab-uai.png"
-            alt="Gob_Lab UAI"
-            width={260} // Ajusta el tamaño de la imagen según sea necesario
-            height={100}
-            //objectFit='contain'
-            
-          />
+      {/* ── Header ── */}
+      <header style={{ background: '#fff', borderBottom: `1px solid ${T.roseLight}`, padding: '12px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', minWidth: 0 }}>
+          <LogoUAIGobLab height={34} rose={T.rose} ink={T.ink} mono={MONO} />
+          <div className="ft-logo-sep" style={{ width: 1, height: 22, background: T.roseLight }} />
+          <div>
+            <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 1.5, color: T.ink60 }}>HERRAMIENTA</div>
+            <div style={{ fontSize: 14, fontWeight: 600, marginTop: 1 }}>Ficha de transparencia del modelo</div>
+          </div>
         </div>
-        
 
-        {/* Elemento Central */}
-        <h1 className="text-3xl font-bold text-center flex-1 ">Ficha de transparencia del modelo</h1>
-
-        {/* Elemento Derecho */}
-        <div className="flex items-center space-x-2">
-          <Image
-            src="/images/herramientas.png"
-            alt="HERRAMIENTAS ALGORITMOS ÉTICOS"
-            width={280} // Ajusta el tamaño de la imagen según sea necesario
-            height={100}
-            //objectFit='contain'
-          
-          />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <div style={{ fontFamily: MONO, fontSize: 11, color: T.ink60 }}>{Math.round(progress)}% completo</div>
+          <div style={{ width: 110, height: 5, background: T.paperDeep, borderRadius: 3, overflow: 'hidden' }}>
+            <div style={{ width: `${progress}%`, height: '100%', background: `linear-gradient(90deg,${T.rose},${T.burgundy})`, transition: 'width .4s cubic-bezier(.16,1,.3,1)' }} />
+          </div>
+          <button onClick={handleSaveResponses} style={ghostBtn}>Guardar</button>
         </div>
-      </div>
+      </header>
 
-        <div className="container mx-auto p-4">
-          {!isSidebarOpen && (
-            <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(true)} className="mb-4"> 
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          )}
-          <div className="grid grid-cols-[300px_1fr] gap-8">
-            {/* Lista de Secciones */}
-            <div className="space-y-1">
-              <h2 className="mb-4 text-xl font-bold">Dimensiones</h2>
-              {sections.map((section, index) => (
+      <div className="ft-shell" style={{ flex: 1, display: 'grid', gridTemplateColumns: '280px 1fr', alignItems: 'start' }}>
+
+        {/* ── Sidebar de secciones ── */}
+        <aside className="ft-aside" style={{ background: '#fff', borderRight: `1px solid ${T.roseLight}`, position: 'sticky', top: 0, alignSelf: 'start', maxHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '14px 14px 10px', borderBottom: `1px solid ${T.roseLight}` }}>
+            <div style={{ fontSize: 11, fontFamily: MONO, letterSpacing: 1, color: T.ink60, marginBottom: 4 }}>SDA DOCUMENTADO</div>
+            <div style={{ fontSize: 14.5, fontWeight: 600, lineHeight: 1.35 }}>
+              {formData.nombreModelo1 || 'Sistema sin nombre'}
+            </div>
+          </div>
+          <nav style={{ flex: 1, overflow: 'auto', padding: 8 }}>
+            {sections.map((section, i) => {
+              const active = activeSection === section.id
+              const done = isSectionComplete(section, formData)
+              return (
                 <button
                   key={section.id}
-                  onClick={() => setActiveSection(section.id)}
-                  className={`flex w-full items-center justify-between rounded-lg px-4 py-2 text-left transition-colors ${
-                    activeSection === section.id
-                      ? 'bg-blue-500 text-white'
-                      : 'hover:bg-gray-100'
-                  }`}
+                  onClick={() => { setActiveSection(section.id); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                  style={{
+                    width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 9,
+                    padding: '8px', borderRadius: 8, marginBottom: 2, cursor: 'pointer',
+                    border: 'none', fontFamily: 'inherit', transition: 'background .15s',
+                    background: active ? T.burgundy : 'transparent',
+                    color: active ? '#fff' : done ? T.ink80 : T.ink60,
+                  }}
                 >
-                  <span>{`${index + 1}. ${section.title}`}</span>
-                  {section.questions.every(q => !q.isRequired || !shouldShowQuestion(q) || (formData[q.id] && formData[q.id].length > 0)) && (
-                    <Check className="h-5 w-5" />
-                  )}
+                  <span style={{
+                    width: 25, height: 25, borderRadius: 99, flexShrink: 0, display: 'flex',
+                    alignItems: 'center', justifyContent: 'center', fontSize: 10.5, fontWeight: 700,
+                    fontFamily: MONO, transition: 'all .15s',
+                    background: active || done ? T.rose : 'transparent',
+                    color: active || done ? '#fff' : T.ink40,
+                    border: !active && !done ? `1.5px solid ${T.ink20}` : 'none',
+                  }}>{done ? <I.check width={13} height={13} /> : String(i + 1).padStart(2, '0')}</span>
+                  <span style={{ flex: 1, fontSize: 14, fontWeight: active ? 600 : 400, lineHeight: 1.35 }}>{section.title}</span>
+                  <span style={{ fontSize: 11.5, fontFamily: MONO, color: active ? T.roseLight : T.ink40 }}>
+                    {sectionProgress(section, formData)}%
+                  </span>
                 </button>
-              ))}
+              )
+            })}
+          </nav>
+          <div style={{ padding: '12px 14px', borderTop: `1px solid ${T.roseLight}`, fontSize: 12.5, color: T.ink60, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ color: T.burgundy, display: 'inline-flex' }}><I.lock /></span> Auto-guardado local
+          </div>
+        </aside>
+
+        {/* ── Preguntas de la sección ── */}
+        {/* El padding inferior reserva el alto de la barra fija. */}
+        <main style={{ padding: '28px 36px 0', paddingBottom: navH + 36, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 20 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 99, background: T.rose, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: MONO, fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
+              {String(sectionIndex + 1).padStart(2, '0')}
             </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h2 style={{ fontFamily: SERIF, fontWeight: 500, fontSize: 26, letterSpacing: -0.6, margin: 0, lineHeight: 1.1 }}>{currentSection.title}</h2>
+              <div style={{ fontSize: 12, color: T.ink60, marginTop: 2 }}>
+                {visibleInSection.length} {visibleInSection.length === 1 ? 'pregunta' : 'preguntas'} · Sección {sectionIndex + 1} de {sections.length}
+              </div>
+            </div>
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <div style={{ fontSize: 10, fontFamily: MONO, color: T.ink60, letterSpacing: 1 }}>AVANCE</div>
+              <div style={{ fontFamily: SERIF, fontSize: 22, color: T.burgundy, lineHeight: 1 }}>
+                {sectionProgress(currentSection, formData)}<span style={{ color: T.ink40, fontSize: 14 }}>%</span>
+              </div>
+            </div>
+          </div>
 
-            {/* Contenido Principal */}
-            <div className="space-y-8">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'rgba(192,138,147,.08)', borderLeft: `3px solid ${T.rose}`, borderRadius: '0 8px 8px 0', marginBottom: 22, fontSize: 13, color: T.ink80 }}>
+            <span style={{ color: T.rose, display: 'inline-flex', flexShrink: 0 }}><I.help width={14} height={14} /></span>
+            Cada pregunta incluye un ícono de ayuda con información adicional. Las marcadas con <strong style={{ color: T.burgundy }}>*</strong> son obligatorias.
+          </div>
 
-
-              <Card className="rounded-lg bg-white p-6 shadow-sm">
-                <h2 className="mb-6 text-2xl font-bold">
-                  {sections.findIndex(s => s.id === activeSection) + 1}. {sections.find(s => s.id === activeSection)?.title}
-                </h2>
-                
-                <div className="mb-4 rounded-lg bg-blue-50 p-4">
-                  <div className="flex items-center gap-2 text-blue-700">
-                    <HelpCircle className="h-5 w-5" />
-                    <p>Cada pregunta incluye un ícono de ayuda con información adicional</p>
+          <form onSubmit={e => e.preventDefault()} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            {visibleInSection.map((question, qIndex) => (
+              <div key={question.id} style={{ display: 'contents' }}>
+                {/* Subtítulo de bloque: Legal agrupa 35 preguntas en 8 temas y sin
+                    esta separación se lee como una lista interminable. */}
+                {question.bloque && question.bloque !== visibleInSection[qIndex - 1]?.bloque && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: qIndex ? 14 : 0 }}>
+                    <div style={{ fontFamily: MONO, fontSize: 10.5, letterSpacing: 1.6, color: T.burgundy, whiteSpace: 'nowrap' }}>
+                      {question.bloque.toUpperCase()}
+                    </div>
+                    <div style={{ flex: 1, height: 1, background: T.roseLight }} />
                   </div>
-                </div>
+                )}
 
-                <div className="space-y-6">
-                  {sections.find(s => s.id === activeSection)?.questions.map((question, questionIndex) => (
-                    shouldShowQuestion(question) && (
-                      <div key={question.id} className="grid gap-2">
-                        <div className="flex items-center justify-between">
-                          <Label htmlFor={question.id} className="flex items-center">
-                            {`${sections.findIndex(s => s.id === activeSection) + 1}.${questionIndex + 1} ${question.text}`}
-                            {question.isRequired && <span className="text-red-500 ml-1">*</span>}
-                          </Label>
-                          <div className="relative">
-                            <button
-                              type="button"
-                              aria-label="Mostrar ayuda"
-                              onClick={() => setExpandedTooltip(expandedTooltip === question.id ? null : question.id)}
-                              className="focus:outline-none"
-                            >
-                              <HelpCircle className="h-5 w-5 text-gray-400 cursor-pointer" />
-                            </button>
-                            {/* Tooltip personalizado para click/touch */}
-                            {expandedTooltip === question.id && (
-                              <div
-                                className="absolute right-0 z-50 mt-2 w-64 rounded-md bg-gray-100 p-4 shadow-lg text-sm text-gray-800"
-                                style={{ minWidth: '200px' }}
-                                onClick={() => setExpandedTooltip(null)}
-                                tabIndex={0}
-                                role="dialog"
-                              >
-                                <p>{question.tooltip}</p>
-                                <div className="text-right mt-2">
-                                  <button
-                                    type="button"
-                                    className="text-blue-600 text-xs"
-                                    aria-label="Cerrar tooltip"
-                                    onClick={e => { e.stopPropagation(); setExpandedTooltip(null); }}
-                                  >
-                                    &#10005;
-                                  </button>
-                                </div>
-                              </div>
-                            )}
+                <div style={{ background: '#fff', border: `1px solid ${T.roseLight}`, borderRadius: 12, padding: '18px 20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12, gap: 12 }}>
+                  <label htmlFor={question.id} style={{ fontSize: 14, fontWeight: 500, color: T.ink, lineHeight: 1.45 }}>
+                    <span style={{ fontFamily: MONO, fontSize: 12, color: T.burgundy, marginRight: 6 }}>
+                      {question.numero}
+                    </span>
+                    {question.text}
+                    {question.isRequired && <span style={{ color: T.burgundy, marginLeft: 3 }}>*</span>}
+                    {flags[question.id] === 'down' && <FlaggedLabel />}
+                  </label>
+
+                  {question.tooltip?.trim() && (
+                    <div style={{ position: 'relative', flexShrink: 0 }}>
+                      <button
+                        type="button"
+                        aria-label="Mostrar información adicional"
+                        onClick={() => setExpandedTooltip(prev => prev === question.id ? null : question.id)}
+                        style={{ width: 24, height: 24, borderRadius: 99, border: `1.5px solid ${T.roseLight}`, background: expandedTooltip === question.id ? T.rosePaper : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: expandedTooltip === question.id ? T.burgundy : T.ink60 }}
+                      >
+                        <I.help />
+                      </button>
+
+                      {expandedTooltip === question.id && (
+                        <div
+                          style={{ position: 'absolute', right: 0, top: 30, zIndex: 50, width: 'min(90vw, 340px)', padding: '16px 18px', borderRadius: 12, border: `1px solid ${T.roseLight}`, background: '#fff', boxShadow: '0 12px 40px rgba(0,0,0,.14)', maxHeight: '50vh', overflowY: 'auto' }}
+                          onClick={e => e.stopPropagation()}
+                          role="dialog"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => setExpandedTooltip(null)}
+                            aria-label="Cerrar"
+                            style={{ position: 'absolute', right: 10, top: 10, border: 'none', background: 'transparent', cursor: 'pointer', color: T.ink60, padding: 2 }}
+                          >
+                            <I.close width={14} height={14} />
+                          </button>
+                          <div style={{ fontSize: 13, color: T.ink80, lineHeight: 1.6, paddingRight: 14 }}>
+                            {question.tooltip.split('\n').map((paragraph, i) => (
+                              <p key={i} style={{ margin: '0 0 8px', textAlign: 'justify' }}>{paragraph}</p>
+                            ))}
                           </div>
                         </div>
-                        {renderQuestion(question, sections.findIndex(s => s.id === activeSection), questionIndex)}
-                      </div>
-                    )
-                  ))}
+                      )}
+                    </div>
+                  )}
                 </div>
-              </Card>
 
-              {/* Botones de acción */}
-              <div className="flex justify-between gap-4">
-                <Button onClick={handleSaveResponses}>Guardar Respuestas</Button>
-                <Button
-                    onClick={handleOpenPreview}
-                    variant="outline"
-                    disabled={!isAllRequiredAnswered}
-                  >
-                    Vista previa / Exportar PDF
-                  </Button>
-                <div className="space-x-4">
-                  
-                  <Button onClick={handleNextSection} disabled={isLastSection}>
-                    Siguiente Sección
-                    <ChevronRight className="ml-2 h-4 w-5" />
-                  </Button>
+                {renderQuestionInput(question)}
+
+                <QuestionFeedback
+                  questionId={question.id}
+                  flag={flags[question.id]}
+                  onFlag={state => handleFlag(question.id, state)}
+                  email={userEmail || undefined}
+                  context={{
+                    pantalla: 'cuestionario',
+                    seccion: `${String(sectionIndex + 1).padStart(2, '0')} ${currentSection.title}`,
+                    pregunta: question.numero,
+                    questionId: question.id,
+                    progreso: progress,
+                  }}
+                />
                 </div>
-              </div>  
-            </div>
+              </div>
+            ))}
+          </form>
+        </main>
+
+        {/* Barra de navegación: anclada al viewport, siempre visible.
+            Arranca después del sidebar en escritorio (ver .ft-navbar). */}
+        <div ref={navbarRef} className="ft-navbar" style={{ position: 'fixed', bottom: 0, left: 280, right: 0, zIndex: 40, background: '#fff', borderTop: `1px solid ${T.roseLight}`, padding: '14px 36px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap', boxShadow: '0 -4px 20px rgba(0,0,0,.06)' }}>
+          <button onClick={handlePreviousSection} disabled={sectionIndex === 0} style={{ ...ghostBtn, opacity: sectionIndex === 0 ? 0.4 : 1, cursor: sectionIndex === 0 ? 'not-allowed' : 'pointer' }}>
+            <span style={{ transform: 'rotate(180deg)', display: 'inline-flex' }}><I.arrow /></span> Anterior
+          </button>
+          <div style={{ fontSize: 12, color: T.ink60, fontFamily: MONO, letterSpacing: 0.5 }}>
+            Sección {sectionIndex + 1} de {sections.length} · <span style={{ color: T.burgundy, fontWeight: 600 }}>Guardado automáticamente</span>
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button
+              onClick={handleOpenPreview}
+              title={isAllRequiredAnswered ? undefined : 'Completa las preguntas obligatorias para generar la ficha'}
+              style={{ ...ghostBtn, opacity: isAllRequiredAnswered ? 1 : 0.5 }}
+            >
+              <I.download /> Vista previa / PDF
+            </button>
+            <button onClick={handleNextSection} disabled={isLastSection} style={{ ...solidBtn, opacity: isLastSection ? 0.4 : 1, cursor: isLastSection ? 'not-allowed' : 'pointer' }}>
+              Siguiente <I.arrow />
+            </button>
           </div>
         </div>
       </div>
-      
+
+      {/* La pill sube para no quedar tapada por la barra fija. */}
+      <FeedbackPill
+        bottom={navH + 16}
+        defaultEmail={userEmail || ''}
+        context={{
+          pantalla: 'cuestionario',
+          seccion: `${String(sectionIndex + 1).padStart(2, '0')} ${currentSection.title}`,
+          progreso: progress,
+        }}
+      />
+
+      {/* ── Encuesta de satisfacción (una sola vez, antes de la ficha) ── */}
+      {surveyModal && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(10,10,10,.5)', zIndex: 110, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: 24, overflowY: 'auto' }}
+          onClick={cerrarEncuestaYAbrir}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: T.paper, borderRadius: 18, padding: '26px 28px', width: '100%', maxWidth: 720, boxShadow: '0 24px 64px rgba(0,0,0,.24)', margin: 'auto' }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, marginBottom: 18 }}>
+              <div>
+                <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 2, color: T.burgundy, marginBottom: 8 }}>ANTES DE DESCARGAR</div>
+                <h2 style={{ fontFamily: SERIF, fontWeight: 500, fontSize: 28, letterSpacing: -0.8, margin: 0, lineHeight: 1.1 }}>
+                  Evalúa esta <em style={{ color: T.burgundy }}>herramienta</em>.
+                </h2>
+                <p style={{ fontSize: 13, color: T.ink60, margin: '8px 0 0', lineHeight: 1.6 }}>
+                  Toma menos de dos minutos y solo te la pedimos una vez. Puedes omitirla: tu ficha se genera igual.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={cerrarEncuestaYAbrir}
+                aria-label="Omitir encuesta"
+                style={{ width: 28, height: 28, border: `1px solid ${T.roseLight}`, borderRadius: 99, display: 'flex', alignItems: 'center', justifyContent: 'center', color: T.ink60, background: '#fff', cursor: 'pointer', flexShrink: 0 }}
+              >
+                <I.close width={14} height={14} />
+              </button>
+            </div>
+
+            <SatisfactionSurvey
+              embedded
+              email={userEmail || undefined}
+              progreso={progress}
+              onSent={() => { marcarEncuestaEnviada(); setTimeout(cerrarEncuestaYAbrir, 1200) }}
+            />
+
+            <button type="button" onClick={cerrarEncuestaYAbrir} style={{ ...ghostBtn, marginTop: 16 }}>
+              Omitir y ver la ficha <I.arrow />
+            </button>
+          </div>
+        </div>
+      )}
+
       {showPreview && (
         <PreviewFicha
           formData={formData}
           onClose={() => setShowPreview(false)}
         />
       )}
+
+      <style jsx>{`
+        @media (max-width: 900px) {
+          .ft-shell { grid-template-columns: 1fr !important; }
+          .ft-aside {
+            position: static !important;
+            max-height: none !important;
+            border-right: none !important;
+            border-bottom: 1px solid ${T.roseLight};
+          }
+          .ft-navbar { left: 0 !important; padding-left: 20px !important; padding-right: 20px !important; }
+        }
+        @media (max-width: 560px) {
+          .ft-logo-sep { display: none; }
+        }
+      `}</style>
     </div>
   )
 }

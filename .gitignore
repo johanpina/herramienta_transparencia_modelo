@@ -24,6 +24,10 @@
 .DS_Store
 *.pem
 
+# lockfile: el repo se compila con npm (package-lock.json). Si pnpm-lock.yaml
+# llegara a subirse, Vercel cambiaría a pnpm e ignoraría el lock de npm.
+pnpm-lock.yaml
+
 # debug
 npm-debug.log*
 yarn-debug.log*

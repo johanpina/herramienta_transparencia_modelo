@@ -1,37 +1,35 @@
-/* Base: pantalla => 1 columna */
+/**
+ * Ajustes del documento de la ficha (#ficha-preview).
+ *
+ * La mayor parte del estilo va inline en preview-ficha.tsx con los tokens
+ * "Civic Rose"; aquí queda solo lo que no se puede expresar inline: el número
+ * de columnas y las reglas de corte entre columnas y páginas.
+ */
+
+/* Pantalla: una sola columna, se lee como una página larga. */
 .print-columns {
   column-count: 1;
 }
 
-/* Justificación y pequeñas sangrías */
-.print-columns p,
-.print-columns li  {
-  text-align: justify;
-  text-justify: inter-word;
-  text-indent: 0;          /* sin tabulaciones raras */
+/* Evita que un bloque de datos quede partido entre columnas o páginas. */
+.print-columns section {
+  break-inside: avoid-column;
+  page-break-inside: avoid;
 }
 
-/* Sangría visual tras cada título */
-.print-columns section > p,
-.print-columns section > ul {
-  margin-left: 4mm;        /* ajusta a tu gusto */
+.print-columns p {
+  orphans: 2;
+  widows: 2;
 }
 
-.logo-img {
-  max-width: 30%;          /* nunca más de un tercio del ancho */
-  height: auto;
-}
-/* Imprimir => 2 columnas (lo refuerza la regla inline del botón) */
 @media print {
   .no-print { display: none !important; }
+
+  /* Dos columnas en el PDF; el resto de reglas de impresión las inyecta
+     PdfExportButton en `pageStyle`, que es lo que ve la ventana de impresión. */
   .print-columns {
     column-count: 2 !important;
-    column-gap: 18mm !important;
+    column-gap: 12mm !important;
     column-fill: auto !important;
-
-  }
-  .logo-img {
-    max-width: 120px;      /* cifra de seguridad en mm ~45 */
   }
 }
-
