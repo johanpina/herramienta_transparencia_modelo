@@ -145,12 +145,20 @@ for (const regla of Object.values(CONDICIONES)) {
   }
 }
 
+const esInternacional = q => /intern/i.test(q.version || '')
+
 datos.dimensiones.forEach((dim, di) => {
   const nDim = di + 1
   const [slug, title] = DIMS[di]
   const preguntas = []
 
-  dim.preguntas.forEach((q, qi) => {
+  /* El Excel agrega las variantes internacionales al final de la hoja, después
+     de todas las nacionales. Se apartan antes de numerar: si entraran al
+     recorrido, correrían la numeración por posición de todas las demás. */
+  const base = dim.preguntas.filter(q => !esInternacional(q))
+  const variantes = dim.preguntas.filter(esInternacional)
+
+  base.forEach((q, qi) => {
     const numero = `${nDim}.${qi + 1}`
     const id = `d${String(nDim).padStart(2, '0')}_q${String(qi + 1).padStart(2, '0')}`
     const texto = limpiar(q.texto)
@@ -209,8 +217,28 @@ datos.dimensiones.forEach((dim, di) => {
       placeholder: limpiar(q.placeholder),
       bloque: limpiar(q.bloque),
       dependsOn, nota,
+      idExcel: q.id,
     })
   })
+
+  /* Cada variante internacional reescribe una pregunta existente: se empareja
+     por el ID del Excel dentro de la misma hoja y se guarda como override, no
+     como pregunta aparte. Así comparten identificador, respuesta y condicional
+     — sólo cambia la redacción. */
+  for (const v of variantes) {
+    const destino = preguntas.find(p => p.idExcel === v.id)
+    if (!destino) {
+      avisos.push(`variante internacional sin pareja: ${dim.hoja.trim()} id ${v.id}`)
+      continue
+    }
+    const ov = {}
+    if (v.texto && v.texto !== destino.texto) ov.text = limpiar(v.texto)
+    if (v.tooltip && limpiar(v.tooltip) !== destino.tooltip) ov.tooltip = limpiar(v.tooltip)
+    const optsV = parseAlternativas(v.alternativas)
+    if (optsV.length > 1 && JSON.stringify(optsV) !== JSON.stringify(destino.options)) ov.options = optsV
+    if (Object.keys(ov).length) destino.overrides = { internacional: ov }
+    else avisos.push(`variante internacional idéntica a la nacional: ${destino.numero}`)
+  }
 
   secciones.push({ slug, title, preguntas })
 })
@@ -289,6 +317,21 @@ for (const s of secciones) {
     L.push(`        tooltip: '${esc(p.tooltip)}',`)
     if (p.placeholder) L.push(`        placeholder: '${esc(p.placeholder)}',`)
     if (p.bloque) L.push(`        bloque: '${esc(p.bloque)}',`)
+    if (p.overrides?.internacional) {
+      const ov = p.overrides.internacional
+      L.push(`        // Redacción neutra: la nacional cita normativa chilena.`)
+      L.push(`        overrides: {`)
+      L.push(`          internacional: {`)
+      if (ov.text) L.push(`            text: '${esc(ov.text)}',`)
+      if (ov.tooltip) L.push(`            tooltip: '${esc(ov.tooltip)}',`)
+      if (ov.options?.length) {
+        L.push(`            options: [`)
+        for (const o of ov.options) L.push(`              '${esc(o)}',`)
+        L.push(`            ],`)
+      }
+      L.push(`          },`)
+      L.push(`        },`)
+    }
     if (p.iaGen) L.push(`        iaGen: true,`)
     if (p.dependsOn) {
       if (p.nota && p.nota !== 'heredada') L.push(`        // TODO(${p.nota}): revisar esta condición con el equipo de contenido.`)

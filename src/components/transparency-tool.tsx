@@ -17,7 +17,7 @@ import { CustomDatePicker } from "@/components/ui/date-picker"
 import 'react-datepicker/dist/react-datepicker.css'
 import { PreviewFicha } from './preview-ficha'
 import { T, SERIF, MONO, inputBase } from '@/lib/civic'
-import { I, LogoUAIGobLab } from '@/components/civic-icons'
+import { I } from '@/components/civic-icons'
 import { FeedbackPill } from '@/components/FeedbackPill'
 import { QuestionFeedback, FlaggedLabel, type FlagState } from '@/components/QuestionFeedback'
 import { SatisfactionSurvey } from '@/components/SatisfactionSurvey'
@@ -31,6 +31,13 @@ import {
   type Question,
   type Answers,
 } from '@/data/sections'
+import {
+  CONTEXTOS,
+  CONTEXTO_STORAGE_KEY,
+  labelContexto,
+  normalizarContexto,
+  type Contexto,
+} from '@/lib/contexto'
 import {
   trackSectionComplete,
   trackToolComplete,
@@ -46,6 +53,8 @@ function TransparencyTool() {
   const [expandedTooltip, setExpandedTooltip] = useState<string | null>(null)
   const [flags, setFlags] = useState<Record<string, FlagState | undefined>>({})
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  // El contexto lo eligió el usuario en la portada; acá sólo se lee.
+  const [contexto, setContexto] = useState<Contexto>(normalizarContexto(undefined))
 
   // Encuesta de satisfacción: se pide una sola vez, en el primer intento de
   // abrir la vista previa. Nunca bloquea — omitirla también abre la ficha.
@@ -59,6 +68,9 @@ function TransparencyTool() {
   useEffect(() => {
     const email = localStorage.getItem('userEmail')
     setUserEmail(email)
+    // La URL manda (permite compartir un enlace); si no trae nada, lo guardado.
+    const desdeUrl = new URLSearchParams(window.location.search).get('contexto')
+    setContexto(normalizarContexto(desdeUrl ?? localStorage.getItem(CONTEXTO_STORAGE_KEY)))
     if (email && localStorage.getItem(`surveySent_${email}`)) setSurveySent(true)
 
     const savedAnswers = localStorage.getItem(`answers_${email}`)
@@ -108,19 +120,19 @@ function TransparencyTool() {
 
   useEffect(() => {
     const allAnswered = sections.every(section =>
-      visibleQuestions(section, formData).every(q => !q.isRequired || isAnswered(q, formData))
+      visibleQuestions(section, formData, contexto).every(q => !q.isRequired || isAnswered(q, formData))
     )
     setIsAllRequiredAnswered(allAnswered)
-  }, [formData])
+  }, [formData, contexto])
 
-  const allVisible = sections.flatMap(s => visibleQuestions(s, formData))
+  const allVisible = sections.flatMap(s => visibleQuestions(s, formData, contexto))
   const progress = allVisible.length
     ? (allVisible.filter(q => isAnswered(q, formData)).length / allVisible.length) * 100
     : 0
 
   const sectionIndex = sections.findIndex(s => s.id === activeSection)
   const currentSection = sections[sectionIndex]
-  const visibleInSection = visibleQuestions(currentSection, formData)
+  const visibleInSection = visibleQuestions(currentSection, formData, contexto)
   const isLastSection = sectionIndex === sections.length - 1
 
   const handleNextSection = () => {
@@ -353,12 +365,19 @@ function TransparencyTool() {
       {/* ── Header ── */}
       <header style={{ background: '#fff', borderBottom: `1px solid ${T.roseLight}`, padding: '12px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', minWidth: 0 }}>
-          <LogoUAIGobLab height={34} rose={T.rose} ink={T.ink} mono={MONO} />
+          <img src="/images/logo-goblab-uai.png" alt="GobLab · Universidad Adolfo Ibáñez" style={{ height: 34, width: 'auto', display: 'block', borderRadius: 4 }} />
           <div className="ft-logo-sep" style={{ width: 1, height: 22, background: T.roseLight }} />
           <div>
             <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 1.5, color: T.ink60 }}>HERRAMIENTA</div>
             <div style={{ fontSize: 14, fontWeight: 600, marginTop: 1 }}>Herramienta de Transparencia Algorítmica</div>
           </div>
+          <span
+            title={`Estás respondiendo bajo el ${labelContexto(contexto).toLowerCase()}`}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 99, background: T.rosePaper, border: `1px solid ${T.roseLight}`, color: T.burgundy, fontSize: 12, fontWeight: 600 }}
+          >
+            <span aria-hidden>{CONTEXTOS.find(c => c.id === contexto)?.icon}</span>
+            {labelContexto(contexto)}
+          </span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
@@ -383,7 +402,7 @@ function TransparencyTool() {
           <nav style={{ flex: 1, overflow: 'auto', padding: 8 }}>
             {sections.map((section, i) => {
               const active = activeSection === section.id
-              const done = isSectionComplete(section, formData)
+              const done = isSectionComplete(section, formData, contexto)
               return (
                 <button
                   key={section.id}
@@ -406,7 +425,7 @@ function TransparencyTool() {
                   }}>{done ? <I.check width={13} height={13} /> : String(i + 1).padStart(2, '0')}</span>
                   <span style={{ flex: 1, fontSize: 14, fontWeight: active ? 600 : 400, lineHeight: 1.35 }}>{section.title}</span>
                   <span style={{ fontSize: 11.5, fontFamily: MONO, color: active ? T.roseLight : T.ink40 }}>
-                    {sectionProgress(section, formData)}%
+                    {sectionProgress(section, formData, contexto)}%
                   </span>
                 </button>
               )
@@ -433,7 +452,7 @@ function TransparencyTool() {
             <div style={{ textAlign: 'right', flexShrink: 0 }}>
               <div style={{ fontSize: 10, fontFamily: MONO, color: T.ink60, letterSpacing: 1 }}>AVANCE</div>
               <div style={{ fontFamily: SERIF, fontSize: 22, color: T.burgundy, lineHeight: 1 }}>
-                {sectionProgress(currentSection, formData)}<span style={{ color: T.ink40, fontSize: 14 }}>%</span>
+                {sectionProgress(currentSection, formData, contexto)}<span style={{ color: T.ink40, fontSize: 14 }}>%</span>
               </div>
             </div>
           </div>
@@ -607,6 +626,7 @@ function TransparencyTool() {
       {showPreview && (
         <PreviewFicha
           formData={formData}
+          contexto={contexto}
           onClose={() => setShowPreview(false)}
         />
       )}

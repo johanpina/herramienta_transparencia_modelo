@@ -4,7 +4,7 @@ columnas (que cambian de hoja en hoja) y los IDs (que Excel convirtió en fechas
 """
 import openpyxl, datetime, json, re
 
-SRC = '/Users/johanpina/Downloads/FTA Gen (Hito1) Contenido_Desarrollo  .xlsx'
+SRC = '/Users/johanpina/Downloads/FTA Gen (Hito1) Contenido_Desarrollo   (1).xlsx'
 wb = openpyxl.load_workbook(SRC, data_only=True)
 
 def fmt(v):
@@ -45,6 +45,8 @@ def colmap(ws):
         elif h.startswith('comentario'): m['comentario'] = i
         elif h.startswith('estado'): m['estado'] = i
         elif h.startswith('nueva hito'): m['hito'] = i
+        elif h.startswith('versión') or h.startswith('version'): m['version'] = i
+        elif h.startswith('label condicionado'): m['label_cond'] = i
     return m
 
 dims = []
@@ -65,6 +67,8 @@ for ws in wb.worksheets:
                 'label_nuevo': limpio(g('nuevo')),
                 'obligatoria': g('condicion'),
                 'comentario': g('comentario'),
+                'version': g('version') or 'Nacional',
+                'label_condicionado': g('label_cond'),
                 'estado': g('estado'),
                 'hito': g('hito'),
                 'tooltip': '', 'placeholder': '', 'opciones': '', 'alternativas': '',

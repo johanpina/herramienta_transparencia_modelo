@@ -384,7 +384,7 @@ export const sections: Section[] = [
           'E. Necesario para el ejercicio de derechos y cumplimiento de obligaciones del responsable o del titular en el ámbito laboral o de seguridad social, en el marco de la ley.',
           'F. Autorizado o mandatado expresamente por la ley. Ej:Es necesario para cumplir deberes o derechos en la relación laboral, según la ley.',
           'F. Porque una ley lo ordena o lo permite Ej:Hay una norma que autoriza este tratamiento.',
-          'G. Ninguna de las anteriores',
+          'G. Ninguna de las anteriores Nota: las causales habilitantes específicas y su formulación exacta varían según la legislación de protección de datos aplicable en cada país; se sugiere validar con la normativa local',
         ],
         isRequired: true,
         tooltip: 'Estos son habilitantes legales distintos al consentimiento; basta que se cumpla uno.',
@@ -410,6 +410,25 @@ export const sections: Section[] = [
         isRequired: true,
         tooltip: 'Cada supuesto exige justificación estricta: no debe existir alternativa menos intrusiva y el uso debe limitarse a ese fin.',
         bloque: 'Datos sensibles',
+        // Redacción neutra: la nacional cita normativa chilena.
+        overrides: {
+          internacional: {
+            text: 'Si el dato sensible es de salud y seleccionó la causal "autorizado por ley" en la pregunta anterior, indique cuál de las siguientes excepciones específicas ampara el tratamiento (seleccione solo una):',
+            options: [
+              'A. Política de tratamiento (fecha y versión)',
+              'B. Identificación del responsable/representante legal y encargado de prevención',
+              'C. Domicilio, correo o formulario de contacto',
+              'D. Categorías de datos, universo de titulares, destinatarios, finalidades, base legal',
+              'E. Política y medidas de seguridad',
+              'F. Derechos de los titulares (acceso, rectificación, supresión, oposición, portabilidad); G.Derecho a recurrir ante la autoridad de protección de datos competente en el país correspondiente',
+              'H. Transferencias internacionales, nivel de protección y garantías',
+              'I. Periodo de conservación',
+              'J. Fuente de los datos',
+              'K. Derecho a revocar el consentimiento cuando aplique',
+              'L. Información significativa sobre la lógica del SDA y consecuencias previstas',
+            ],
+          },
+        },
         // TODO(consulta-8): revisar esta condición con el equipo de contenido.
         dependsOn: [
           { questionId: 'd04_q06', equals: 'Sí' },
@@ -813,7 +832,7 @@ export const sections: Section[] = [
           'L. Información significativa sobre la lógica del SDA y consecuencias previstas',
         ],
         isRequired: true,
-        tooltip: 'El responsable del tratamiento debe ofrecer públicamente, de manera permanente y accesible (sitio web u otro medio equivalente), información clara, precisa y actualizada que permita al público y al titular conocer cómo se usan sus datos. Marque cada elemento que efectivamente esté publicado y adjunte el enlace o evidencia correspondiente.',
+        tooltip: 'Por regla general, el tratamiento de datos sensibles requiere consentimiento expreso del titular, salvo que exista una causal legal habilitante. Si no hay consentimiento expreso, seleccione la(s) causal(es) que apliquen (puede marcar más de una):\n\nA. Los datos fueron hechos manifiestamente públicos por el propio titular, y su tratamiento se relaciona con los fines para los cuales fueron publicados.\n\nB. Interés legítimo de una persona jurídica de derecho público o privado sin fines de lucro, siempre que: tenga una finalidad política, filosófica, religiosa, cultural, sindical o gremial; el tratamiento se refiera exclusivamente a sus miembros o afiliados; esté destinado a cumplir los fines propios de la institución; existan garantías contra filtraciones o uso no autorizado; y no exista comunicación a terceros.\n\nC. Es indispensable para salvaguardar la vida, salud o integridad física o psíquica del titular o de un tercero, o cuando el titular esté impedido de otorgar su consentimiento.\n\nD. Es necesario para el ejercicio o defensa de un derecho ante tribunales de justicia o un órgano administrativo.\n\nE. Es necesario para el ejercicio de derechos u obligaciones en el ámbito laboral o de seguridad social.\n\nF. Está autorizado o exigido expresamente por la ley aplicable en el país correspondiente.\n\nG. Ninguna de las anteriores.\n\nNota: las causales habilitantes específicas y su formulación exacta pueden variar según la legislación de protección de datos aplicable en cada país; se recomienda validar con la normativa local vigente.',
         bloque: 'Deber de información y transparencia',
       },
     ],
@@ -833,6 +852,12 @@ export const sections: Section[] = [
         ],
         isRequired: true,
         tooltip: '',
+        // Redacción neutra: la nacional cita normativa chilena.
+        overrides: {
+          internacional: {
+            text: '¿El organismo que implementará el proyecto es considerado servicio esencial según la normativa de ciberseguridad vigente en su país?',
+          },
+        },
       },
       {
         id: 'd05_q02',
@@ -845,6 +870,13 @@ export const sections: Section[] = [
         ],
         isRequired: true,
         tooltip: '',
+        // Redacción neutra: la nacional cita normativa chilena.
+        overrides: {
+          internacional: {
+            text: '¿El organismo es considerado entidad esencial o de infraestructura crítica según la clasificación de la autoridad nacional de ciberseguridad competente?',
+            tooltip: 'Indique si, además de la normativa marco de ciberseguridad aplicable, existen normas sectoriales (por ejemplo, financieras, sanitarias, energéticas u otras) aplicables al sistema o a la institución. Puede mencionarse el sector o norma de forma general.',
+          },
+        },
         dependsOn: [
           { questionId: 'd05_q01', equals: 'Sí' },
         ],
@@ -1024,6 +1056,13 @@ export const sections: Section[] = [
         type: 'textarea',
         isRequired: true,
         tooltip: 'Esta pregunta aplica solo a operadores de importancia vital. Indique si los planes de continuidad y recuperación han sido certificados conforme a la normativa vigente, sin adjuntar certificados ni antecedentes técnicos.',
+        // Redacción neutra: la nacional cita normativa chilena.
+        overrides: {
+          internacional: {
+            text: 'En caso de ser considerado entidad esencial o de infraestructura crítica, ¿dichos planes han sido certificados conforme a la normativa de ciberseguridad vigente en su país?',
+            tooltip: 'Esta pregunta aplica solo a entidades esenciales o de infraestructura crítica. Indique si los planes de continuidad y recuperación han sido certificados conforme a la normativa vigente, sin adjuntar certificados ni antecedentes técnicos.',
+          },
+        },
         // TODO(consulta-1): revisar esta condición con el equipo de contenido.
         dependsOn: [
           { questionId: 'd05_q02', equals: 'Sí' },

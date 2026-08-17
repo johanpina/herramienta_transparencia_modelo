@@ -13,10 +13,11 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { T, SERIF, MONO } from '@/lib/civic'
-import { I, LogoUAIGobLab } from '@/components/civic-icons'
+import { I } from '@/components/civic-icons'
 import { FeedbackPill } from '@/components/FeedbackPill'
 import { sections } from '@/data/sections'
 import { trackToolStart, registerToolUser } from '@/lib/analytics'
+import { CONTEXTOS, CONTEXTO_DEFAULT, CONTEXTO_STORAGE_KEY, type Contexto } from '@/lib/contexto'
 
 /* ── Rótulo "Herramientas Algoritmos Éticos" en texto ─────────────── */
 function LogoHerramientas({ scale = 0.7 }: { scale?: number }) {
@@ -199,6 +200,7 @@ const DISCLAIMER = [
 export default function LandingPage() {
   const [email, setEmail] = useState('')
   const [starting, setStarting] = useState(false)
+  const [contexto, setContexto] = useState<Contexto>(CONTEXTO_DEFAULT)
   const router = useRouter()
   const VERSION = process.env.NEXT_PUBLIC_VERSION || '0.0.0'
 
@@ -208,6 +210,7 @@ export default function LandingPage() {
     setStarting(true)
 
     localStorage.setItem('userEmail', email)
+    localStorage.setItem(CONTEXTO_STORAGE_KEY, contexto)
     const savedAnswers = localStorage.getItem(`answers_${email}`)
     if (savedAnswers) localStorage.setItem('currentAnswers', savedAnswers)
 
@@ -215,7 +218,7 @@ export default function LandingPage() {
     trackToolStart()
 
     setStarting(false)
-    router.push('/herramienta-transparencia')
+    router.push(`/herramienta-transparencia?contexto=${contexto}`)
   }
 
   const fieldStyle: React.CSSProperties = {
@@ -229,7 +232,7 @@ export default function LandingPage() {
       {/* ── Barra superior ── */}
       <header style={{ padding: '14px 40px', background: '#fff', borderBottom: `1px solid ${T.roseLight}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap', minWidth: 0 }}>
-          <LogoUAIGobLab height={36} rose={T.rose} ink={T.ink} mono={MONO} />
+          <img src="/images/logo-goblab-uai.png" alt="GobLab · Universidad Adolfo Ibáñez" style={{ height: 38, width: 'auto', display: 'block', borderRadius: 4 }} />
           <div className="ft-logo-sep" style={{ width: 1, height: 24, background: T.roseLight }} />
           <LogoHerramientas scale={0.7} />
         </div>
@@ -332,6 +335,44 @@ export default function LandingPage() {
             Tus respuestas se guardan en este navegador asociadas a tu correo, así puedes retomar la ficha más tarde.
           </p>
 
+          {/* Contexto normativo. Cambia la redacción de las preguntas que citan
+              leyes chilenas y queda declarado en la ficha, así que conviene
+              elegirlo antes de empezar y no a mitad del cuestionario. */}
+          <div style={{ marginBottom: 18 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: T.ink80, display: 'block', marginBottom: 6 }}>
+              ¿Bajo qué marco normativo respondes?
+            </span>
+            <div role="group" aria-label="Contexto normativo de la ficha" style={{ display: 'inline-flex', border: `1.5px solid ${T.roseLight}`, borderRadius: 10, overflow: 'hidden' }}>
+              {CONTEXTOS.map((c, i) => {
+                const on = contexto === c.id
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setContexto(c.id)}
+                    aria-pressed={on}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      padding: '8px 14px', fontSize: 13, fontWeight: on ? 700 : 500,
+                      fontFamily: 'inherit', cursor: 'pointer', border: 'none',
+                      borderLeft: i > 0 ? `1.5px solid ${T.roseLight}` : 'none',
+                      background: on ? T.burgundy : '#fff',
+                      color: on ? '#fff' : T.ink80,
+                      transition: 'all .15s',
+                    }}
+                  >
+                    <span aria-hidden>{c.icon}</span> {c.short}
+                  </button>
+                )
+              })}
+            </div>
+            <p style={{ fontSize: 11.5, color: T.ink60, lineHeight: 1.5, margin: '7px 0 0' }}>
+              {contexto === 'chile'
+                ? 'Las preguntas citan la normativa chilena: Ley Marco de Ciberseguridad, ANCI y la ley de protección de datos.'
+                : 'Las preguntas se enuncian en términos generales, sin referencias a la normativa chilena.'}
+            </p>
+          </div>
+
           <div style={{ marginBottom: 18 }}>
             <label htmlFor="email" style={{ fontSize: 12, fontWeight: 600, color: T.ink80, display: 'block', marginBottom: 5 }}>Correo electrónico</label>
             <input
@@ -397,13 +438,22 @@ export default function LandingPage() {
             </div>
           </details>
 
-          <div style={{ background: '#fff', border: `1px solid ${T.roseLight}`, borderRadius: 14, padding: '18px 20px' }}>
-            <div style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 1, color: T.ink60, marginBottom: 12 }}>AGRADECIMIENTOS</div>
-            <Image src="/images/ANID.png" alt="Agencia Nacional de Investigación y Desarrollo" width={150} height={50} style={{ height: 'auto' }} />
-            <p style={{ fontSize: 12, color: T.ink60, margin: '10px 0 0', lineHeight: 1.6 }}>
-              Subdirección de Investigación Aplicada / Concurso IDeA I+D 2023, proyecto ID23I10357.
-            </p>
+        </div>
+      </section>
+
+      {/* ── Agradecimientos ──
+          Sección propia antes del pie, como en la EIA: estaba metida como una
+          tarjeta más en la columna de avisos y el logo de ANID quedaba diminuto
+          al lado de la exención de responsabilidad. */}
+      <section style={{ background: '#fff', borderTop: `1px solid ${T.roseLight}`, padding: '30px 40px' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 30, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ fontSize: 11, fontFamily: MONO, letterSpacing: 1.5, color: T.ink60, textTransform: 'uppercase' }}>Agradecimientos</div>
+            <Image src="/images/ANID.png" alt="Agencia Nacional de Investigación y Desarrollo (ANID)" width={228} height={76} style={{ height: 76, width: 'auto' }} />
           </div>
+          <p style={{ fontSize: 13.5, color: T.ink80, margin: 0, lineHeight: 1.65, maxWidth: 560, flex: '1 1 320px' }}>
+            Esta herramienta es desarrollada por <strong>GobLab UAI</strong> con el apoyo de la <strong>Agencia Nacional de Investigación y Desarrollo (ANID)</strong> — Subdirección de Investigación Aplicada / Concurso IDeA I+D 2023, proyecto <strong>ID23I10357</strong>.
+          </p>
         </div>
       </section>
 

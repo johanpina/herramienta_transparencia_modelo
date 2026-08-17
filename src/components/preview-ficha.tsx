@@ -20,13 +20,20 @@ import React, { useState } from 'react'
 import { format } from 'date-fns'
 import { PdfExportButton } from '@/components/PdfExportButton'
 import { T, SERIF, MONO } from '@/lib/civic'
-import { I, LogoUAIGobLab } from '@/components/civic-icons'
+import { I } from '@/components/civic-icons'
 import { sections, visibleQuestions, isAnswered, PREGUNTAS_CLAVE, type Answers, type Question } from '@/data/sections'
+import { CONTEXTO_DEFAULT, iconoContexto, labelContexto, type Contexto } from '@/lib/contexto'
 
 interface PreviewFichaProps {
   formData: Answers
   onClose: () => void
   isPdfGeneration?: boolean
+  /**
+   * Marco normativo bajo el que se respondió. Cambia la redacción de cuatro
+   * preguntas y queda declarado en el encabezado: quien lea la ficha debe poder
+   * saber si se elaboró contra la normativa chilena o en términos generales.
+   */
+  contexto?: Contexto
 }
 
 /* Los ids del encabezado viven en question-types.ts, compartidos con el
@@ -75,7 +82,7 @@ function Dato({ question, value }: { question: Question; value: unknown }) {
   )
 }
 
-export function PreviewFicha({ formData, onClose, isPdfGeneration = false }: PreviewFichaProps) {
+export function PreviewFicha({ formData, onClose, isPdfGeneration = false, contexto = CONTEXTO_DEFAULT }: PreviewFichaProps) {
   const [printing, setPrinting] = useState(false)
   const currentDate = new Date()
   const year = currentDate.getFullYear()
@@ -92,7 +99,7 @@ export function PreviewFicha({ formData, onClose, isPdfGeneration = false }: Pre
     .map((section, i) => ({
       n: String(i + 1).padStart(2, '0'),
       title: section.title,
-      respondidas: visibleQuestions(section, formData).filter(q => isAnswered(q, formData)),
+      respondidas: visibleQuestions(section, formData, contexto).filter(q => isAnswered(q, formData)),
     }))
     .filter(d => d.respondidas.length > 0)
 
@@ -142,7 +149,7 @@ export function PreviewFicha({ formData, onClose, isPdfGeneration = false }: Pre
             hoja. El documento es la ficha, no un informe con carátula. */}
         <header style={{ breakInside: 'avoid' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap', marginBottom: 18 }}>
-            <LogoUAIGobLab height={32} rose={T.rose} ink={T.ink} mono={MONO} />
+            <img src="/images/logo-goblab-uai.png" alt="GobLab · Universidad Adolfo Ibáñez" style={{ height: 32, width: 'auto', display: 'block', borderRadius: 4 }} />
             <div style={{ fontWeight: 800, lineHeight: 0.95, textAlign: 'right', letterSpacing: -0.3 }}>
               <div style={{ fontSize: 11, color: T.rose }}>HERRAMIENTAS</div>
               <div style={{ fontSize: 13, color: T.ink }}>ALGORITMOS<br />ÉTICOS</div>
@@ -154,8 +161,23 @@ export function PreviewFicha({ formData, onClose, isPdfGeneration = false }: Pre
             padding: '18px 22px', marginBottom: 20,
             printColorAdjust: 'exact', WebkitPrintColorAdjust: 'exact',
           }}>
-            <div style={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: 1.8, color: T.burgundy, marginBottom: 6 }}>
-              FICHA DE TRANSPARENCIA DEL MODELO
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 6 }}>
+              <div style={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: 1.8, color: T.burgundy }}>
+                FICHA DE TRANSPARENCIA DEL MODELO
+              </div>
+              {/* Bajo qué marco normativo se respondió. Va en el encabezado y no
+                  en el pie porque cambia cómo se leen las respuestas de Legal y
+                  Ciberseguridad, no es un dato de procedencia del archivo. */}
+              <span style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                padding: '2px 9px', borderRadius: 99,
+                background: '#fff', border: `1px solid ${T.roseLight}`,
+                fontFamily: MONO, fontSize: 8.5, letterSpacing: 1, color: T.burgundy,
+                printColorAdjust: 'exact', WebkitPrintColorAdjust: 'exact',
+              }}>
+                <span aria-hidden>{iconoContexto(contexto)}</span>
+                {labelContexto(contexto).toUpperCase()}
+              </span>
             </div>
             <h1 style={{ fontFamily: SERIF, fontWeight: 500, fontSize: 28, letterSpacing: -0.8, margin: 0, lineHeight: 1.1, color: T.ink }}>
               {nombreSDA}
@@ -235,7 +257,7 @@ export function PreviewFicha({ formData, onClose, isPdfGeneration = false }: Pre
           printColorAdjust: 'exact', WebkitPrintColorAdjust: 'exact',
         }}>
           <span>GobLab UAI · Licencia MPL-2.0 · v{version}</span>
-          <span>© {year} · Elaborada el {elaborationDate}</span>
+          <span>{labelContexto(contexto)} · © {year} · Elaborada el {elaborationDate}</span>
         </footer>
       </div>
     </div>

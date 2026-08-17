@@ -4,10 +4,13 @@
  * Vive aparte de `sections.ts` porque ese archivo se genera desde el Excel del
  * Hito 1 (ver docs/fta-gen/) y se puede volver a generar; esto no.
  *
- * El cuestionario y el PDF comparten `shouldShow` / `isAnswered` a propósito: si
- * cada uno decidiera por su cuenta qué pregunta aplica, el documento terminaría
- * mostrando respuestas de preguntas ocultas, o perdiendo las visibles.
+ * El cuestionario y el PDF comparten `shouldShow`, `isAnswered` y `forContexto`
+ * a propósito: si cada uno decidiera por su cuenta qué pregunta aplica y con qué
+ * redacción, el documento terminaría mostrando respuestas de preguntas ocultas,
+ * o el enunciado del contexto equivocado.
  */
+
+import { CONTEXTO_DEFAULT, type Contexto } from '@/lib/contexto'
 
 export type QuestionType =
   | 'text'
@@ -54,6 +57,24 @@ export interface Question {
   dependsOn?: Condition[]
   /** Sólo aplica si el SDA incorpora IA generativa (ver `IA_GEN_QUESTION_ID`). */
   iaGen?: boolean
+  /**
+   * Contexto normativo exclusivo. Si se define, la pregunta no aparece en el
+   * otro contexto. Sin definir, aplica a ambos.
+   */
+  soloContexto?: Contexto
+  /**
+   * Reescrituras por contexto. Lo que no se define hereda el valor base.
+   *
+   * Hoy lo usan cuatro preguntas de Legal y Ciberseguridad que citan normativa
+   * chilena (la Ley Marco, la ANCI, las causales por letra) y que en el contexto
+   * internacional se enuncian de forma neutra.
+   */
+  overrides?: Partial<Record<Contexto, {
+    text?: string
+    tooltip?: string
+    options?: string[]
+    placeholder?: string
+  }>>
 }
 
 export interface Section {
@@ -105,7 +126,22 @@ function meets(cond: Condition, answers: Answers): boolean {
   return v === cond.equals
 }
 
-export function shouldShow(question: Question, answers: Answers): boolean {
+/**
+ * Aplica las reescrituras del contexto activo. Devuelve la pregunta tal cual si
+ * no tiene overrides, así que es barato llamarla siempre.
+ */
+export function forContexto(question: Question, contexto: Contexto = CONTEXTO_DEFAULT): Question {
+  const o = question.overrides?.[contexto]
+  return o ? { ...question, ...o } : question
+}
+
+/**
+ * El parámetro `contexto` es obligatorio a propósito. Podría tener valor por
+ * defecto, pero entonces un componente que olvidara pasarlo mostraría el
+ * contenido chileno sin fallar; así el compilador señala cada llamada.
+ */
+export function shouldShow(question: Question, answers: Answers, contexto: Contexto): boolean {
+  if (question.soloContexto && question.soloContexto !== contexto) return false
   if (question.iaGen && IA_GEN_QUESTION_ID) {
     if (answers[IA_GEN_QUESTION_ID] !== 'Sí') return false
   }
@@ -113,14 +149,19 @@ export function shouldShow(question: Question, answers: Answers): boolean {
   return question.dependsOn.every(c => meets(c, answers))
 }
 
-/** Preguntas de la dimensión que aplican con las respuestas actuales. */
-export function visibleQuestions(section: Section, answers: Answers): Question[] {
-  return section.questions.filter(q => shouldShow(q, answers))
+/**
+ * Preguntas de la dimensión que aplican con las respuestas y el contexto
+ * actuales, ya con la redacción del contexto resuelta.
+ */
+export function visibleQuestions(section: Section, answers: Answers, contexto: Contexto): Question[] {
+  return section.questions
+    .filter(q => shouldShow(q, answers, contexto))
+    .map(q => forContexto(q, contexto))
 }
 
 /** Porcentaje 0–100 de preguntas visibles respondidas. */
-export function sectionProgress(section: Section, answers: Answers): number {
-  const visibles = visibleQuestions(section, answers)
+export function sectionProgress(section: Section, answers: Answers, contexto: Contexto): number {
+  const visibles = visibleQuestions(section, answers, contexto)
   if (!visibles.length) return 0
   return Math.round((visibles.filter(q => isAnswered(q, answers)).length / visibles.length) * 100)
 }
@@ -132,8 +173,8 @@ export function sectionProgress(section: Section, answers: Answers): number {
  * obligatorias (Consideraciones éticas, por ejemplo) y sin esta condición
  * aparecerían con el visto puesto desde antes de que el usuario las abra.
  */
-export function isSectionComplete(section: Section, answers: Answers): boolean {
-  const visibles = visibleQuestions(section, answers)
+export function isSectionComplete(section: Section, answers: Answers, contexto: Contexto): boolean {
+  const visibles = visibleQuestions(section, answers, contexto)
   if (!visibles.length) return false
   if (!visibles.some(q => isAnswered(q, answers))) return false
   return visibles.every(q => !q.isRequired || isAnswered(q, answers))
