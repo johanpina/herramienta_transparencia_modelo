@@ -196,7 +196,13 @@ datos.dimensiones.forEach((dim, di) => {
     if (regla) {
       const reglas = Array.isArray(regla[0]) ? regla : [regla]
       dependsOn = reglas.map(([ref, op, val]) => {
-        const refId = `d${String(nDim).padStart(2, '0')}_q${String(Number(ref.split('.')[1])).padStart(2, '0')}`
+        // La dimensión sale de la propia referencia, no de la sección en curso:
+        // asumir la actual hacía que una condición hacia otra dimensión apuntara
+        // en silencio a la pregunta equivocada. Hoy todas son intra-dimensión,
+        // así que el resultado no cambia; lo que cambia es que dejaría de mentir
+        // si alguien escribe una cruzada.
+        const [refDim, refNum] = ref.split('.')
+        const refId = `d${String(Number(refDim)).padStart(2, '0')}_q${String(Number(refNum)).padStart(2, '0')}`
         if (op === 'includes' || op === 'startsWith') {
           // La condición apunta a la alternativa que empieza con esa letra.
           return { questionId: refId, [op === 'includes' ? 'includes' : 'equals']: `__LETRA_${val}__${ref}` }
@@ -362,6 +368,62 @@ const bloqueClave = (clave.match(/PREGUNTAS_CLAVE = \{([\s\S]*?)\}/) || [])[1] |
 for (const [, campo, id] of bloqueClave.matchAll(/(\w+):\s*'([^']+)'/g)) {
   if (!idsGenerados.has(id)) {
     avisos.push(`PREGUNTAS_CLAVE.${campo} apunta a '${id}', que ya no existe — actualizar question-types.ts`)
+  }
+}
+
+/* ── Validación del grafo de condicionales ─────────────────────────
+   Una condición mal apuntada no falla en la app: la pregunta simplemente no
+   aparece nunca, o peor, aparece cuando no debe. Se revisa acá, que es donde
+   se puede ver el grafo completo. */
+{
+  const todas = secciones.flatMap((s, si) => s.preguntas.map(p => ({ ...p, si })))
+  const porId = new Map(todas.map(p => [p.id, p]))
+
+  for (const p of todas) {
+    for (const c of p.dependsOn ?? []) {
+      const padre = porId.get(c.questionId)
+      if (!padre) {
+        avisos.push(`${p.numero} depende de '${c.questionId}', que no existe — la pregunta nunca se mostraría`)
+        continue
+      }
+      // El índice de visibilidad es por dimensión (ver question-types.ts): una
+      // dependencia entre dimensiones no se resolvería y la cadena se evaluaría
+      // sólo a un nivel, que es justo el defecto que se corrigió.
+      if (padre.si !== p.si) {
+        avisos.push(`${p.numero} depende de ${padre.numero}, en otra dimensión — el índice de visibilidad es por dimensión`)
+      }
+    }
+  }
+
+  // Ciclos y profundidad de las cadenas.
+  const profundidad = (p, visto = new Set()) => {
+    if (!p.dependsOn?.length || visto.has(p.id)) return 0
+    visto.add(p.id)
+    return 1 + Math.max(0, ...p.dependsOn
+      .map(c => porId.get(c.questionId))
+      .filter(Boolean)
+      .map(padre => profundidad(padre, new Set(visto))))
+  }
+  const enCiclo = p => {
+    const caminar = (actual, visto) => {
+      if (visto.has(actual.id)) return true
+      visto.add(actual.id)
+      return (actual.dependsOn ?? []).some(c => {
+        const padre = porId.get(c.questionId)
+        return padre ? caminar(padre, new Set(visto)) : false
+      })
+    }
+    return caminar(p, new Set())
+  }
+  for (const p of todas) {
+    if (p.dependsOn?.length && enCiclo(p)) avisos.push(`${p.numero} participa de un ciclo de dependencias`)
+  }
+
+  const profundas = todas.filter(p => profundidad(p) >= 2)
+  const profundasObligatorias = profundas.filter(p => p.isRequired)
+  if (profundas.length) {
+    console.log(`cadenas de profundidad >=2: ${profundas.length} preguntas (obligatorias: ${profundasObligatorias.length})`)
+    console.log(`profundidad máxima: ${Math.max(...todas.map(p => profundidad(p)))}`)
   }
 }
 

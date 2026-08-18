@@ -136,17 +136,64 @@ export function forContexto(question: Question, contexto: Contexto = CONTEXTO_DE
 }
 
 /**
- * El parámetro `contexto` es obligatorio a propósito. Podría tener valor por
- * defecto, pero entonces un componente que olvidara pasarlo mostraría el
- * contenido chileno sin fallar; así el compilador señala cada llamada.
+ * Índice id → pregunta de una dimensión, memoizado.
+ *
+ * Alcanza con un índice por sección porque **todas las dependencias del
+ * cuestionario son intra-dimensión**; `generar-sections.mjs` avisa si alguna
+ * llegara a cruzar. Un índice global obligaría a importar `sections.ts` desde
+ * acá, y `sections.ts` ya reexporta este módulo: sería un ciclo.
  */
-export function shouldShow(question: Question, answers: Answers, contexto: Contexto): boolean {
+const indicePorSeccion = new WeakMap<Section, Map<string, Question>>()
+
+function indiceDe(section: Section): Map<string, Question> {
+  let idx = indicePorSeccion.get(section)
+  if (!idx) {
+    idx = new Map(section.questions.map(q => [q.id, q]))
+    indicePorSeccion.set(section, idx)
+  }
+  return idx
+}
+
+/**
+ * ¿Esta pregunta aplica?
+ *
+ * La condición se evalúa **de forma transitiva**: no basta con que el padre
+ * tenga el valor esperado, el padre además tiene que estar visible. Las
+ * respuestas nunca se purgan —a propósito, para que revertir un cambio no
+ * borre lo ya escrito— así que sin esta comprobación una respuesta huérfana
+ * mantiene viva toda su rama. En Ciberseguridad son 19 obligatorias colgando
+ * de una sola pregunta: bastaba corregir `5.1` a "No" para quedar con la
+ * descarga bloqueada por preguntas que ya no se muestran.
+ *
+ * `contexto` es obligatorio a propósito: si tuviera valor por defecto, un
+ * componente que olvidara pasarlo mostraría el contenido chileno sin fallar.
+ *
+ * `index` es opcional para no romper llamadas sueltas; sin él se comporta como
+ * antes (un solo nivel). `visibleQuestions` siempre lo pasa.
+ */
+export function shouldShow(
+  question: Question,
+  answers: Answers,
+  contexto: Contexto,
+  index?: Map<string, Question>,
+  seen: Set<string> = new Set(),
+): boolean {
   if (question.soloContexto && question.soloContexto !== contexto) return false
   if (question.iaGen && IA_GEN_QUESTION_ID) {
     if (answers[IA_GEN_QUESTION_ID] !== 'Sí') return false
   }
   if (!question.dependsOn?.length) return true
-  return question.dependsOn.every(c => meets(c, answers))
+
+  // Corte de ciclos. Ante un ciclo en el contenido preferimos mostrar de más:
+  // ocultar preguntas en silencio por un error de datos es mucho peor.
+  if (seen.has(question.id)) return true
+  const visto = new Set(seen).add(question.id)
+
+  return question.dependsOn.every(c => {
+    const padre = index?.get(c.questionId)
+    if (padre && !shouldShow(padre, answers, contexto, index, visto)) return false
+    return meets(c, answers)
+  })
 }
 
 /**
@@ -154,8 +201,9 @@ export function shouldShow(question: Question, answers: Answers, contexto: Conte
  * actuales, ya con la redacción del contexto resuelta.
  */
 export function visibleQuestions(section: Section, answers: Answers, contexto: Contexto): Question[] {
+  const index = indiceDe(section)
   return section.questions
-    .filter(q => shouldShow(q, answers, contexto))
+    .filter(q => shouldShow(q, answers, contexto, index))
     .map(q => forContexto(q, contexto))
 }
 

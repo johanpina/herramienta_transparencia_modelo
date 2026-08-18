@@ -11,7 +11,7 @@
  * `tool_start` y el registro del correo se disparan en la portada.
  */
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useToast } from "@/components/ui/use-toast"
 import { CustomDatePicker } from "@/components/ui/date-picker"
 import 'react-datepicker/dist/react-datepicker.css'
@@ -48,8 +48,10 @@ function TransparencyTool() {
   const [activeSection, setActiveSection] = useState(sections[0].id)
   const { toast } = useToast()
   const [formData, setFormData] = useState<Answers>({})
-  const [isAllRequiredAnswered, setIsAllRequiredAnswered] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+  // Los campos no se marcan en rojo hasta que la persona intenta generar la
+  // ficha: señalar errores en un formulario que recién se abre es hostil.
+  const [intentoDeGenerar, setIntentoDeGenerar] = useState(false)
   const [expandedTooltip, setExpandedTooltip] = useState<string | null>(null)
   const [flags, setFlags] = useState<Record<string, FlagState | undefined>>({})
   const [userEmail, setUserEmail] = useState<string | null>(null)
@@ -118,12 +120,29 @@ function TransparencyTool() {
     )
   }
 
+  /**
+   * Obligatorias visibles sin responder. Es estado derivado: se calcula, no se
+   * guarda. Antes era un booleano en `useState` y sólo servía para bloquear;
+   * con la lista se puede además decir cuáles faltan y llevar hasta ellas.
+   */
+  const pendientes = useMemo(
+    () => sections.flatMap(s =>
+      visibleQuestions(s, formData, contexto)
+        .filter(q => q.isRequired && !isAnswered(q, formData))
+        .map(q => ({ seccionId: s.id, seccionTitle: s.title, numero: q.numero, id: q.id }))
+    ),
+    [formData, contexto]
+  )
+  const isAllRequiredAnswered = pendientes.length === 0
+
+  // El resaltado se apaga solo al completarse: no tiene sentido dejar campos
+  // en rojo cuando ya no falta nada.
   useEffect(() => {
-    const allAnswered = sections.every(section =>
-      visibleQuestions(section, formData, contexto).every(q => !q.isRequired || isAnswered(q, formData))
-    )
-    setIsAllRequiredAnswered(allAnswered)
-  }, [formData, contexto])
+    if (isAllRequiredAnswered) setIntentoDeGenerar(false)
+  }, [isAllRequiredAnswered])
+
+  /** Ids pendientes, para resaltar los campos tras un intento fallido. */
+  const idsPendientes = useMemo(() => new Set(pendientes.map(p => p.id)), [pendientes])
 
   const allVisible = sections.flatMap(s => visibleQuestions(s, formData, contexto))
   const progress = allVisible.length
@@ -163,9 +182,26 @@ function TransparencyTool() {
    */
   const handleOpenPreview = () => {
     if (!isAllRequiredAnswered) {
+      // Con 112 preguntas en 12 dimensiones, "faltan obligatorias" a secas deja
+      // a la persona buscando a ciegas: se dice cuáles y se la lleva hasta ahí.
+      const porSeccion = new Map<string, string[]>()
+      for (const p of pendientes) {
+        porSeccion.set(p.seccionTitle, [...(porSeccion.get(p.seccionTitle) ?? []), p.numero])
+      }
+      const grupos = [...porSeccion.entries()]
+      const detalle = grupos
+        .slice(0, 3)
+        .map(([seccion, nums]) => `${seccion}: ${nums.join(', ')}`)
+        .join(' · ')
+      const resto = grupos.length > 3 ? ` y ${grupos.length - 3} sección(es) más` : ''
+
+      setIntentoDeGenerar(true)
+      setActiveSection(pendientes[0].seccionId)
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+
       toast({
-        title: "Faltan preguntas obligatorias",
-        description: "Completa todas las preguntas marcadas con * antes de generar la ficha.",
+        title: `Faltan ${pendientes.length} pregunta(s) obligatoria(s)`,
+        description: `${detalle}${resto}`,
         variant: "destructive",
       })
       return
@@ -403,6 +439,7 @@ function TransparencyTool() {
             {sections.map((section, i) => {
               const active = activeSection === section.id
               const done = isSectionComplete(section, formData, contexto)
+              const faltan = pendientes.filter(p => p.seccionId === section.id).length
               return (
                 <button
                   key={section.id}
@@ -424,6 +461,19 @@ function TransparencyTool() {
                     border: !active && !done ? `1.5px solid ${T.ink20}` : 'none',
                   }}>{done ? <I.check width={13} height={13} /> : String(i + 1).padStart(2, '0')}</span>
                   <span style={{ flex: 1, fontSize: 14, fontWeight: active ? 600 : 400, lineHeight: 1.35 }}>{section.title}</span>
+                  {/* Tras un intento fallido, cuántas obligatorias faltan acá. */}
+                  {intentoDeGenerar && faltan > 0 && (
+                    <span
+                      title={`${faltan} pregunta(s) obligatoria(s) sin responder`}
+                      style={{
+                        minWidth: 18, height: 18, borderRadius: 99, flexShrink: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontFamily: MONO, fontSize: 10, fontWeight: 700,
+                        background: active ? '#fff' : T.burgundy,
+                        color: active ? T.burgundy : '#fff',
+                      }}
+                    >{faltan}</span>
+                  )}
                   <span style={{ fontSize: 11.5, fontFamily: MONO, color: active ? T.roseLight : T.ink40 }}>
                     {sectionProgress(section, formData, contexto)}%
                   </span>
@@ -476,7 +526,15 @@ function TransparencyTool() {
                   </div>
                 )}
 
-                <div style={{ background: '#fff', border: `1px solid ${T.roseLight}`, borderRadius: 12, padding: '18px 20px' }}>
+                <div style={{
+                  background: '#fff', borderRadius: 12, padding: '18px 20px',
+                  border: intentoDeGenerar && idsPendientes.has(question.id)
+                    ? `1.5px solid ${T.burgundy}`
+                    : `1px solid ${T.roseLight}`,
+                  boxShadow: intentoDeGenerar && idsPendientes.has(question.id)
+                    ? '0 0 0 3px rgba(122,59,72,.08)'
+                    : 'none',
+                }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12, gap: 12 }}>
                   <label htmlFor={question.id} style={{ fontSize: 14, fontWeight: 500, color: T.ink, lineHeight: 1.45 }}>
                     <span style={{ fontFamily: MONO, fontSize: 12, color: T.burgundy, marginRight: 6 }}>
@@ -627,6 +685,7 @@ function TransparencyTool() {
         <PreviewFicha
           formData={formData}
           contexto={contexto}
+          pendientes={pendientes}
           onClose={() => setShowPreview(false)}
         />
       )}

@@ -34,6 +34,13 @@ interface PreviewFichaProps {
    * saber si se elaboró contra la normativa chilena o en términos generales.
    */
   contexto?: Contexto
+  /**
+   * Obligatorias visibles sin responder. Hoy `handleOpenPreview` no deja llegar
+   * acá con pendientes, así que siempre viene vacío; se recibe para que, si
+   * alguna vez se monta la vista previa por otra ruta, el documento avise en vez
+   * de salir incompleto en silencio. No bloquea la exportación.
+   */
+  pendientes?: Array<{ seccionTitle: string; numero: string }>
 }
 
 /* Los ids del encabezado viven en question-types.ts, compartidos con el
@@ -82,7 +89,7 @@ function Dato({ question, value }: { question: Question; value: unknown }) {
   )
 }
 
-export function PreviewFicha({ formData, onClose, isPdfGeneration = false, contexto = CONTEXTO_DEFAULT }: PreviewFichaProps) {
+export function PreviewFicha({ formData, onClose, isPdfGeneration = false, contexto = CONTEXTO_DEFAULT, pendientes = [] }: PreviewFichaProps) {
   const [printing, setPrinting] = useState(false)
   const currentDate = new Date()
   const year = currentDate.getFullYear()
@@ -121,6 +128,14 @@ export function PreviewFicha({ formData, onClose, isPdfGeneration = false, conte
             <span style={{ transform: 'rotate(180deg)', display: 'inline-flex' }}><I.arrow /></span> Volver al cuestionario
           </button>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {pendientes.length > 0 && (
+              <span
+                title={pendientes.map(p => `${p.seccionTitle} ${p.numero}`).join(' · ')}
+                style={{ fontSize: 11.5, color: T.burgundy, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              >
+                <I.flag /> La ficha está incompleta: faltan {pendientes.length} obligatoria(s).
+              </span>
+            )}
             <span style={{ fontSize: 11.5, color: T.ink60 }}>
               Se abrirá el diálogo de impresión: elige <strong>Guardar como PDF</strong>.
             </span>
