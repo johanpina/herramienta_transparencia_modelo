@@ -5,6 +5,7 @@ Esta carpeta contiene el manual de la herramienta y su material de apoyo.
 | Documento | Para quién | Contenido |
 |---|---|---|
 | **[MANUAL_USUARIO.md](MANUAL_USUARIO.md)** | Equipos que van a elaborar una ficha de transparencia | Guía paso a paso: cómo iniciar, cómo recorrer las 12 dimensiones, por qué aparecen y desaparecen preguntas, cómo completar lo obligatorio y cómo obtener el PDF. Ilustrado con capturas reales de la interfaz. |
+| **[MANUAL_TECNICO.md](MANUAL_TECNICO.md)** | Desarrolladores / mantenedores | Arquitectura, el pipeline que genera el cuestionario desde el Excel del Drive, el motor de condicionales, la generación del PDF, Supabase, ejecución local y despliegue. |
 
 ## Material de apoyo
 
