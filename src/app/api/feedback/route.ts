@@ -1,22 +1,25 @@
 import { NextResponse } from "next/server";
+import { ANONIMO, TOOL_NAME, insertarConRespaldo, resolveUserId, sinNulos } from "@/lib/supabase-server";
 
 /**
- * Feedback → tabla `tool_feedback` de Supabase.
- *
- * Antes esta ruta enviaba un correo con Resend. Se migró a Supabase para
- * alinearse con la EIA: los comentarios quedan consultables junto a los de las
- * demás herramientas (la columna `tool` los separa) en vez de perderse en una
- * bandeja de entrada. Como efecto lateral, la app ya no necesita RESEND_API_KEY,
- * que además rompía el `next build` cuando la variable venía vacía.
+ * Feedback → tabla `tool_feedback`, compartida con la EIA (la columna `tool`
+ * separa las herramientas).
  *
  * El contexto (pantalla, sección, pregunta, progreso) se guarda en columnas
- * propias para poder consultarlo, y además va incrustado en `description` para
- * que la fila se lea sola en el panel de Supabase.
+ * propias para poder consultarlo, y además se conserva incrustado en
+ * `description` para no romper lo ya guardado ni los reportes existentes.
  *
- * Si esas columnas no existieran (proyecto sin la migración), reintenta el
- * insert solo con los campos originales, de modo que nunca se pierda un envío.
- * Ver ../../../../supabase/migrations/001_tool_survey.sql
+ * Vínculos (migración 004):
+ * - `user_id` → tool_users, solo si la persona aceptó recibir novedades.
+ * - `vote_id` → tool_question_vote, cuando el comentario se escribe desde el
+ *   👍/👎 de una pregunta.
+ *
+ * Si esas columnas todavía no existen (migración sin correr), reintenta el
+ * insert con menos columnas, de modo que nunca se pierda un envío.
+ * Ver supabase/migrations/001_tool_survey.sql de este repo y la 004 de la EIA.
  */
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function POST(req: Request) {
   try {
@@ -27,7 +30,7 @@ export async function POST(req: Request) {
       : Object.fromEntries((await req.formData()).entries());
     /* eslint-enable @typescript-eslint/no-explicit-any */
 
-    const { feedback_type, description, email, organization, context } = body;
+    const { feedback_type, description, email, organization, context, vote_id } = body;
     if (!feedback_type || !description) {
       return NextResponse.json(
         { success: false, error: "Campos obligatorios faltantes" },
@@ -35,29 +38,17 @@ export async function POST(req: Request) {
       );
     }
 
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
-    const tool = process.env.SUPABASE_TOOL_NAME || "herramienta de transparencia";
+    const tool = TOOL_NAME;
 
-    if (!supabaseUrl || !supabaseKey) {
-      return NextResponse.json(
-        { success: false, error: "Configuración de base de datos incompleta" },
-        { status: 500 }
-      );
-    }
-
-    const headers = {
-      apikey: supabaseKey,
-      Authorization: `Bearer ${supabaseKey}`,
-      "Content-Type": "application/json",
-      Prefer: "return=minimal",
-    };
-
+    // Consentimiento: el correo solo se conserva si la persona marcó la casilla
+    // de novedades (está en tool_users). Si no, el comentario se guarda anónimo;
+    // `email` es obligatorio en la tabla, por eso va un valor genérico.
+    const userId = await resolveUserId(email);
     const base = {
       tool,
       feedback_type,
       description,
-      ...(email ? { email } : {}),
+      email: userId ? email : ANONIMO,
       ...(organization ? { organization } : {}),
     };
 
@@ -78,21 +69,16 @@ export async function POST(req: Request) {
         }
       : base;
 
-    const insertar = (fila: object) =>
-      fetch(`${supabaseUrl}/rest/v1/tool_feedback`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(fila),
-      });
+    const vinculos = sinNulos({
+      user_id: userId,
+      vote_id: typeof vote_id === "string" && UUID.test(vote_id) ? vote_id : null,
+    });
 
-    let res = await insertar(conContexto);
-
-    // Las columnas de contexto aún no existen: reintentar sin ellas.
-    if (!res.ok && conContexto !== base) {
-      const detalle = await res.text();
-      console.error("insert con contexto falló, reintentando:", res.status, detalle);
-      res = await insertar(base);
-    }
+    const res = await insertarConRespaldo("tool_feedback", [
+      { ...conContexto, ...vinculos },
+      conContexto,
+      base,
+    ]);
 
     if (!res.ok) throw new Error(await res.text());
 

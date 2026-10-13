@@ -13,6 +13,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 import { T, SERIF, MONO } from '@/lib/civic'
 import { I } from '@/components/civic-icons'
 import { FeedbackPill } from '@/components/FeedbackPill'
@@ -419,7 +420,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 18, cursor: 'pointer', fontSize: 12.5, color: T.ink60, lineHeight: 1.5 }}>
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 8, cursor: 'pointer', fontSize: 12.5, color: T.ink60, lineHeight: 1.5 }}>
             <input
               type="checkbox"
               checked={subscribe}
@@ -431,6 +432,10 @@ export default function LandingPage() {
             </span>
             Acepto recibir novedades del proyecto y de la herramienta.
           </label>
+          <p style={{ fontSize: 11.5, color: T.ink60, lineHeight: 1.5, margin: '0 0 18px 26px' }}>
+            Tus respuestas se quedan en tu dispositivo. Solo guardamos tu correo si marcas esta casilla.{' '}
+            <Link href="/privacidad" style={{ color: T.burgundy, fontWeight: 600 }}>Cómo tratamos tus datos</Link>
+          </p>
 
           <button
             type="submit"
@@ -465,6 +470,9 @@ export default function LandingPage() {
             <p style={{ fontSize: 12.5, color: T.ink60, margin: 0, lineHeight: 1.6 }}>
               La información que ingreses en la ficha no se almacena en la plataforma: se procesa localmente en tu navegador. Si aceptas recibir novedades, tu correo y desde dónde participas se registran únicamente para enviarte novedades del proyecto y con fines estadísticos anonimizados, y nunca se comparten con terceros.
             </p>
+            <Link href="/privacidad" style={{ marginTop: 10, fontSize: 12, color: T.burgundy, fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 5, textDecoration: 'none' }}>
+              Leer política completa <I.arrow />
+            </Link>
           </div>
 
           <details style={{ background: T.rosePaper, border: `1px solid ${T.roseLight}`, borderRadius: 14, padding: '16px 18px' }}>

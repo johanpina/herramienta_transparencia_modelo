@@ -4,16 +4,17 @@
  * Patrón 03 del proyecto de Design: micro-widget de feedback bajo cada
  * pregunta. Un click para levantar la mano, sin interrumpir el flujo.
  *
- * 👍 se registra sólo como evento GA4 — crear una fila en Supabase por cada
- * pulgar arriba llenaría la tabla de filas sin texto accionable. 👎 abre el
- * panel de motivos y sí persiste cuando se envía.
+ * 👍/👎 se registran como evento GA4 y como voto en Supabase
+ * (tool_question_vote, sin correo) para los conteos del panel.
+ * Además, 👎 abre el panel de motivos; ese comentario persiste en
+ * tool_feedback unido al voto (vote_id) desde el que se escribió.
  */
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { toast } from '@/hooks/use-toast'
 import { T, MONO, inputBase } from '@/lib/civic'
 import { I } from '@/components/civic-icons'
-import { sendFeedback, FEEDBACK_TYPES, type FeedbackContext } from '@/lib/feedback'
+import { sendFeedback, sendVote, FEEDBACK_TYPES, type FeedbackContext } from '@/lib/feedback'
 import { trackQuestionFeedback, trackFeedbackSubmit } from '@/lib/analytics'
 
 export type FlagState = 'up' | 'down'
@@ -38,6 +39,9 @@ export function QuestionFeedback({ questionId, context, flag, onFlag, email }: {
   const [reason, setReason] = useState(REASONS[0].label)
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
+  // Voto vigente de esta pregunta. Se guarda la promesa para que un comentario
+  // enviado antes de que responda la API igual quede unido a su voto.
+  const voteRef = useRef<Promise<string | null> | null>(null)
 
   const thumb = (up: boolean) => {
     const next: FlagState = up ? 'up' : 'down'
@@ -45,9 +49,12 @@ export function QuestionFeedback({ questionId, context, flag, onFlag, email }: {
     onFlag(cleared ? undefined : next)
     if (!cleared) {
       trackQuestionFeedback(questionId, up)
+      voteRef.current = sendVote({ questionId, helpful: up, context, email })
       if (!up) setOpen(true)
-    } else if (!up) {
-      setOpen(false)
+    } else {
+      // Voto retirado: un comentario posterior ya no se asocia a él.
+      voteRef.current = null
+      if (!up) setOpen(false)
     }
   }
 
@@ -56,17 +63,27 @@ export function QuestionFeedback({ questionId, context, flag, onFlag, email }: {
     setSending(true)
     try {
       const category = REASONS.find(r => r.label === reason)?.category || FEEDBACK_TYPES.comentario
+      // El panel es "¿Qué no funcionó?": si la persona comenta sin haber
+      // votado, se registra el 👎 que la interfaz le marca, para que el voto y
+      // su comentario queden unidos también en la base. (Si ya votó en una
+      // sesión anterior, no se duplica el voto: el comentario va sin vote_id.)
+      if (!flag) {
+        trackQuestionFeedback(questionId, false)
+        voteRef.current = sendVote({ questionId, helpful: false, context, email })
+      }
+      const voteId = voteRef.current ? await voteRef.current : null
       await sendFeedback({
         category,
         text: `${reason}: ${text.trim()}`,
         email,
         context,
+        voteId,
       })
       trackFeedbackSubmit(category, 'cuestionario/pregunta')
       toast({ title: 'Comentario enviado', description: 'Gracias, nos ayuda a mejorar esta pregunta.' })
       setOpen(false)
       setText('')
-      onFlag('down')
+      if (!flag) onFlag('down')
     } catch (err) {
       toast({
         variant: 'destructive',
@@ -163,7 +180,8 @@ export function QuestionFeedback({ questionId, context, flag, onFlag, email }: {
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 11, color: T.ink60, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-              <I.lock width={11} height={11} /> Se guarda con el ID de la pregunta, sin tus respuestas.
+              <I.lock width={11} height={11} /> Se guarda con el ID de la pregunta, sin tus respuestas.{' '}
+              <a href="/privacidad" target="_blank" rel="noopener noreferrer" style={{ color: T.burgundy, fontWeight: 600 }}>Privacidad</a>
             </span>
             <button
               type="button"

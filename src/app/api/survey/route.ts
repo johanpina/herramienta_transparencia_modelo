@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ANONIMO, TOOL_NAME, insertarConRespaldo, resolveUserId, supabaseConfig } from "@/lib/supabase-server";
 
 /**
  * Encuesta de satisfacción → tabla `tool_survey` (una columna por pregunta).
@@ -10,6 +11,8 @@ import { NextResponse } from "next/server";
  *
  * Si la tabla no existiera (proyecto sin la migración), cae de vuelta a
  * `tool_feedback` guardando la encuesta como texto, para no perder respuestas.
+ * Si la persona aceptó recibir novedades al ingresar, la fila queda unida a
+ * tool_users por `user_id` (migración 004 de la EIA).
  * Ver supabase/migrations/001_tool_survey.sql
  */
 
@@ -32,27 +35,22 @@ export async function POST(req: Request) {
     const body: Payload = await req.json();
     const r = body.respuestas ?? {};
 
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
-    const tool = process.env.SUPABASE_TOOL_NAME || "herramienta de transparencia";
+    const tool = TOOL_NAME;
 
-    if (!supabaseUrl || !supabaseKey) {
+    if (!supabaseConfig()) {
       return NextResponse.json(
         { success: false, error: "Configuración de base de datos incompleta" },
         { status: 500 }
       );
     }
 
-    const headers = {
-      apikey: supabaseKey,
-      Authorization: `Bearer ${supabaseKey}`,
-      "Content-Type": "application/json",
-      Prefer: "return=minimal",
-    };
-
+    // Consentimiento: el correo de ingreso solo se conserva si la persona marcó
+    // la casilla de novedades. Los datos de contacto p11_* sí se guardan: la
+    // persona los escribe explícitamente para pedir acompañamiento.
+    const userId = await resolveUserId(body.email);
     const fila = {
       tool,
-      email: txt(body.email),
+      email: userId ? txt(body.email) : null,
       progreso: typeof body.progreso === "number" ? Math.round(body.progreso) : null,
       p1_institucion: txt(r["1"]),
       p2_facilidad_uso: num(r["2"]),
@@ -71,25 +69,15 @@ export async function POST(req: Request) {
       p11_correo: txt(r["11_correo"]),
     };
 
-    const insertar = (f: object) =>
-      fetch(`${supabaseUrl}/rest/v1/tool_survey`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(f),
-      });
-
-    let res = await insertar(fila);
-
-    // `p1_institucion` es de la v5.0.0: si la migración 002 no se corrió, el
-    // insert falla entero. Reintentar sin esa columna antes que perder la
+    // `p1_institucion` es de la v5.0.0 y `user_id` de la migración 004: si
+    // alguna columna no existe, se reintenta con menos antes que perder la
     // encuesta completa por un campo.
-    if (!res.ok) {
-      const detalle = await res.text();
-      console.error("tool_survey insert falló, reintentando sin p1_institucion:", res.status, detalle);
-      /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
-      const { p1_institucion, ...sinP1 } = fila;
-      res = await insertar(sinP1);
-    }
+    /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+    const { p1_institucion, ...sinP1 } = fila;
+    const res = await insertarConRespaldo(
+      "tool_survey",
+      userId ? [{ ...fila, user_id: userId }, fila, sinP1] : [fila, sinP1],
+    );
 
     if (res.status === 201) {
       return NextResponse.json({ success: true, structured: true });
@@ -99,16 +87,16 @@ export async function POST(req: Request) {
     const detalle = await res.text();
     console.error("tool_survey insert falló:", res.status, detalle);
 
-    const fbRes = await fetch(`${supabaseUrl}/rest/v1/tool_feedback`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        tool,
-        feedback_type: "Comentario general",
-        description: body.texto || JSON.stringify(fila),
-        ...(txt(body.email) ? { email: body.email } : {}),
-      }),
-    });
+    const respaldo = {
+      tool,
+      feedback_type: "Comentario general",
+      description: body.texto || JSON.stringify(fila),
+      email: userId && txt(body.email) ? body.email : ANONIMO,
+    };
+    const fbRes = await insertarConRespaldo(
+      "tool_feedback",
+      userId ? [{ ...respaldo, user_id: userId }, respaldo] : [respaldo],
+    );
 
     if (fbRes.status === 201) {
       return NextResponse.json({ success: true, structured: false });

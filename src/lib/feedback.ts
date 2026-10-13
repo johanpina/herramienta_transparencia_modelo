@@ -60,6 +60,8 @@ export async function sendFeedback(opts: {
   email?: string
   organization?: string
   context?: FeedbackContext
+  /** Voto 👍/👎 desde el que se escribe el comentario (tool_feedback.vote_id). */
+  voteId?: string | null
 }): Promise<void> {
   const res = await fetch('/api/feedback', {
     method: 'POST',
@@ -70,6 +72,7 @@ export async function sendFeedback(opts: {
       email: opts.email || 'anonimo@goblab.cl',
       organization: opts.organization || '',
       context: opts.context ?? null,
+      vote_id: opts.voteId ?? null,
     }),
   })
 
@@ -101,4 +104,40 @@ export async function sendSurvey(opts: {
 
   const data = await res.json().catch(() => ({ success: false, error: 'Respuesta inválida' }))
   if (!data.success) throw new Error(data.error || 'No se pudo enviar la encuesta')
+}
+
+/**
+ * Registra un voto 👍/👎 de claridad de una pregunta en `tool_question_vote`.
+ * Nunca lanza ni bloquea la UI. Complementa al evento GA4.
+ *
+ * Devuelve el id del voto (o null si no se pudo guardar) para unir a él el
+ * comentario que se escriba después. El correo solo se usa en el servidor para
+ * vincular el voto al usuario registrado (si aceptó recibir novedades); la
+ * tabla de votos no guarda correos.
+ */
+export async function sendVote(opts: {
+  questionId: string
+  helpful: boolean
+  context?: FeedbackContext
+  email?: string
+}): Promise<string | null> {
+  try {
+    const res = await fetch('/api/vote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      keepalive: true,
+      body: JSON.stringify({
+        questionId: opts.questionId,
+        helpful: opts.helpful,
+        pregunta: opts.context?.pregunta,
+        seccion: opts.context?.seccion,
+        email: opts.email,
+      }),
+    })
+    const data = await res.json().catch(() => null)
+    return typeof data?.voteId === 'string' ? data.voteId : null
+  } catch {
+    // Nunca interrumpir el cuestionario por un voto.
+    return null
+  }
 }
