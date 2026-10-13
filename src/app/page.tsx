@@ -4,7 +4,8 @@
  * Portada de la Ficha de Transparencia, con el sistema visual "Civic Rose"
  * (ver src/lib/civic.ts) que ya usa la Evaluación de Impacto Algorítmico.
  *
- * El registro del correo y `tool_start` se disparan aquí, al iniciar la ficha;
+ * El registro del correo (sólo si acepta recibir novedades, igual que la EIA)
+ * y `tool_start` se disparan aquí, al iniciar la ficha;
  * antes vivían en el montaje de transparency-tool.tsx, donde el evento se
  * emitía dos veces al volver a entrar con respuestas guardadas.
  */
@@ -224,7 +225,7 @@ export default function LandingPage() {
     const savedAnswers = localStorage.getItem(`answers_${email}`)
     if (savedAnswers) localStorage.setItem('currentAnswers', savedAnswers)
 
-    await registerToolUser(email, origin)
+    if (subscribe) await registerToolUser(email, origin)
     trackToolStart()
 
     setStarting(false)
@@ -462,7 +463,7 @@ export default function LandingPage() {
               <div style={{ fontSize: 13, fontWeight: 700, color: T.ink }}>Privacidad</div>
             </div>
             <p style={{ fontSize: 12.5, color: T.ink60, margin: 0, lineHeight: 1.6 }}>
-              La información que ingreses en la ficha no se almacena en la plataforma: se procesa localmente en tu navegador. El correo se usa únicamente para el registro de uso de la herramienta y con fines estadísticos, y nunca se comparte con terceros.
+              La información que ingreses en la ficha no se almacena en la plataforma: se procesa localmente en tu navegador. Si aceptas recibir novedades, tu correo y desde dónde participas se registran únicamente para enviarte novedades del proyecto y con fines estadísticos anonimizados, y nunca se comparten con terceros.
             </p>
           </div>
 
