@@ -62,14 +62,14 @@ export function trackToolExport(format: string = "pdf") {
   });
 }
 
-export async function registerToolUser(email: string) {
+export async function registerToolUser(email: string, origin?: string) {
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 4000);
     await fetch("/api/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, origin }),
       signal: controller.signal,
     });
     clearTimeout(timeoutId);

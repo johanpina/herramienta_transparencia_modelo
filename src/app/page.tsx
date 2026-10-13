@@ -196,9 +196,19 @@ const DISCLAIMER = [
   'El empleo de las herramientas desarrolladas por la Universidad no implica ni constituye un sello ni certificado de aprobación por parte de la Universidad Adolfo Ibáñez respecto al cumplimiento legal, ético o funcional de un algoritmo de inteligencia artificial. La Universidad Adolfo Ibáñez no se hace responsable de la implementación de los algoritmos de inteligencia artificial que utilicen esta ficha, ni de las decisiones que se tomen en base a la información proporcionada por la misma.',
 ]
 
+const ORIGIN_OPTIONS = [
+  'Organismo público',
+  'Empresa privada',
+  'Institución académica',
+  'Organización de la sociedad civil',
+  'Persona independiente',
+]
+
 /* ── Página ───────────────────────────────────────────────────────── */
 export default function LandingPage() {
   const [email, setEmail] = useState('')
+  const [origin, setOrigin] = useState('')
+  const [subscribe, setSubscribe] = useState(false)
   const [starting, setStarting] = useState(false)
   const [contexto, setContexto] = useState<Contexto>(CONTEXTO_DEFAULT)
   const router = useRouter()
@@ -214,7 +224,7 @@ export default function LandingPage() {
     const savedAnswers = localStorage.getItem(`answers_${email}`)
     if (savedAnswers) localStorage.setItem('currentAnswers', savedAnswers)
 
-    await registerToolUser(email)
+    await registerToolUser(email, origin)
     trackToolStart()
 
     setStarting(false)
@@ -373,7 +383,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div style={{ marginBottom: 18 }}>
+          <div style={{ marginBottom: 14 }}>
             <label htmlFor="email" style={{ fontSize: 12, fontWeight: 600, color: T.ink80, display: 'block', marginBottom: 5 }}>Correo electrónico</label>
             <input
               id="email"
@@ -385,6 +395,41 @@ export default function LandingPage() {
               style={fieldStyle}
             />
           </div>
+
+          <div style={{ marginBottom: 16 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: T.ink80, display: 'block', marginBottom: 8 }}>¿Desde dónde participas?</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {ORIGIN_OPTIONS.map(op => (
+                <label key={op} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 9, border: `1.5px solid ${origin === op ? T.burgundy : T.roseLight}`, background: origin === op ? T.rosePaper : '#fff', cursor: 'pointer', fontSize: 13 }}>
+                  <input
+                    type="radio"
+                    name="origin"
+                    value={op}
+                    checked={origin === op}
+                    onChange={() => setOrigin(op)}
+                    style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
+                  />
+                  <span aria-hidden style={{ width: 16, height: 16, borderRadius: 99, border: `1.5px solid ${origin === op ? T.burgundy : T.ink40}`, background: origin === op ? T.burgundy : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {origin === op && <span style={{ width: 6, height: 6, borderRadius: 99, background: '#fff' }} />}
+                  </span>
+                  {op}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 18, cursor: 'pointer', fontSize: 12.5, color: T.ink60, lineHeight: 1.5 }}>
+            <input
+              type="checkbox"
+              checked={subscribe}
+              onChange={e => setSubscribe(e.target.checked)}
+              style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
+            />
+            <span aria-hidden style={{ width: 16, height: 16, borderRadius: 4, border: `1.5px solid ${subscribe ? T.burgundy : T.ink40}`, background: subscribe ? T.burgundy : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1, color: '#fff' }}>
+              {subscribe && <I.check width={10} height={10} />}
+            </span>
+            Acepto recibir novedades del proyecto y de la herramienta.
+          </label>
 
           <button
             type="submit"
@@ -452,7 +497,7 @@ export default function LandingPage() {
             <Image src="/images/ANID.png" alt="Agencia Nacional de Investigación y Desarrollo (ANID)" width={228} height={76} style={{ height: 76, width: 'auto' }} />
           </div>
           <p style={{ fontSize: 13.5, color: T.ink80, margin: 0, lineHeight: 1.65, maxWidth: 560, flex: '1 1 320px' }}>
-            Esta herramienta es desarrollada por <strong>GobLab UAI</strong> con el apoyo de la <strong>Agencia Nacional de Investigación y Desarrollo (ANID)</strong> — Subdirección de Investigación Aplicada / Concurso IDeA I+D 2023, proyecto <strong>ID23I10357</strong>.
+            Esta herramienta es desarrollada por <strong>GobLab UAI</strong> con el apoyo de la <strong>Agencia Nacional de Investigación y Desarrollo (ANID)</strong> — Subdirección de Investigación Aplicada / Concurso IDeA I+D 2023, proyecto <strong>ID23I10357</strong>, y proyecto <strong>Plataforma Algoritmos Públicos: Hacia una IA Generativa Responsable y Ética (ANID IT25I0161)</strong>.
           </p>
         </div>
       </section>
@@ -460,7 +505,7 @@ export default function LandingPage() {
       {/* ── Pie ── */}
       <footer style={{ padding: '14px 40px', background: T.ink, color: 'rgba(255,255,255,.75)', fontSize: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>
         <span>Desarrollado por <strong style={{ color: '#fff' }}>GobLab UAI</strong> · Escuela de Gobierno UAI</span>
-        <span style={{ fontFamily: MONO, fontSize: 11, opacity: 0.7 }}>ANID ID23I10357</span>
+        <span style={{ fontSize: 11.5, opacity: 0.75 }}>Proyecto Plataforma Algoritmos Públicos: Hacia una IA Generativa Responsable y Ética · <span style={{ fontFamily: MONO, fontSize: 11 }}>ANID IT25I0161</span></span>
       </footer>
 
       <FeedbackPill context={{ pantalla: 'portada' }} defaultEmail={email} />
